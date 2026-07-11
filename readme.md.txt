@@ -41,39 +41,61 @@ This framework automates the application's critical business flows while followi
 # 📂 Project Structure
 
 ```
-GreenKart-Automation
+GreenKart-Automation-Framework
 │
-├── src
-│   ├── main
-│   │   ├── base
-│   │   ├── pages
-│   │   ├── utils
-│   │   ├── constants
-│   │   └── reports
+├── .settings/
+├── src/
+│   ├── logs/
+│   ├── reports/
+│   ├── screenshots/
 │   │
-│   └── resources
-│       ├── config.properties
-│       └── testdata.xlsx
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/
+│   │   │       └── vilayat/
+│   │   │           ├── base/
+│   │   │           │   ├── BaseTest.java
+│   │   │           │   └── DriverFactory.java
+│   │   │           │
+│   │   │           ├── pages/
+│   │   │           │   ├── BasePage.java
+│   │   │           │   ├── HomePage.java
+│   │   │           │   ├── CartPage.java
+│   │   │           │   ├── CheckoutPage.java
+│   │   │           │   └── PlaceOrderPage.java
+│   │   │           │
+│   │   │           ├── utilities/
+│   │   │           │   ├── ConfigReader.java
+│   │   │           │   ├── WaitUtils.java
+│   │   │           │   ├── ScreenshotUtils.java
+│   │   │           │   ├── ExcelReader.java
+│   │   │           │   └── ExtentManager.java
+│   │   │           │
+│   │   │           └── listeners/
+│   │   │               └── TestListener.java
+│   │   │
+│   │   └── resources/
+│   │       └── config.properties
+│   │
+│   └── test/
+│       └── java/
+│           └── com/
+│               └── vilayat/
+│                   └── tests/
+│                       ├── HomePageTest.java
+│                       ├── SearchTest.java
+│                       ├── AddToCartTest.java
+│                       ├── CartTest.java
+│                       ├── CheckoutTest.java
+│                       ├── PlaceOrderTest.java
+│                       └── E2EShoppingTest.java
 │
-├── src
-│   └── test
-│       └── java
-│           ├── tests
-│           ├── listeners
-│           └── runners
-│
-├── docs
-│   ├── Test Plan
-│   ├── Test Cases
-│   ├── RTM
-│   └── Project Documentation
-│
-├── screenshots
-├── reports
-├── logs
+├── GreenKart_TestingDOC_Enhanced.xlsx
 ├── pom.xml
 ├── testng.xml
+├── .gitignore
 └── README.md
+```
 ```
 
 ---
