@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suite name="GreenKart Test Suite">
+    <test name="E2E Shopping Test">
+        <classes>
+            <class name="com.vilayat.tests.E2EShoppingTest"/>
+        </classes>
+    </test>
+</suite>
