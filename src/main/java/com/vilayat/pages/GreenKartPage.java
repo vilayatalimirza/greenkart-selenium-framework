@@ -10,6 +10,8 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import com.vilayat.utils.WaitUtils;
 import com.vilayat.exceptions.ProductNotFoundException;
+
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -99,8 +101,21 @@ public class GreenKartPage {
         driver.findElement(proceedFinalBtn).click();
     }
     public void searchProduct(String productName) {
+        // 1. Grab a reference to the first product on the screen BEFORE we search
+        WebElement firstProductBeforeSearch = driver.findElements(this.productNames).get(0);
+        
+        // 2. Perform the search
         driver.findElement(searchBox).clear();
         driver.findElement(searchBox).sendKeys(productName);
+        
+        // 3. Wait for the UI to re-render the list. 
+        // We know it's done rendering when that old first element detaches from the DOM (goes stale).
+        try {
+            wait.until(ExpectedConditions.stalenessOf(firstProductBeforeSearch));
+        } catch (Exception e) {
+            // If it times out or throws an error, the DOM might have been so fast it already updated. 
+            // We safely swallow this so the test can continue.
+        }
     }
 
     public boolean isLogoDisplayed() {
