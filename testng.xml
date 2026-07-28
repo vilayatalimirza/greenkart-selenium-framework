@@ -8,6 +8,7 @@
             <class name="com.vilayat.tests.E2EShoppingTest"/>
             <class name="com.vilayat.tests.PromoCodeTest"/>
             <class name="com.vilayat.tests.SearchProductTest"/>
+            <class name="com.vilayat.tests.TopDealsTest"/>
         </classes>
     </test>
 </suite>
