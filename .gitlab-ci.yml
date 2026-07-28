@@ -1,0 +1,29 @@
+# 1. Base Environment
+image: maven:3.8.6-openjdk-11
+
+# 2. Pipeline Stages
+stages:
+  - test
+
+# 3. Define the Test Job
+run_selenium_tests:
+  stage: test
+  
+  # Install Chrome for headless execution
+  before_script:
+    - apt-get update && apt-get install -y wget gnupg
+    - wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+    - sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+    - apt-get update && apt-get install -y google-chrome-stable
+    - google-chrome --version
+
+  # Execute the test suite
+  script:
+    - mvn clean test -Dheadless=true
+
+  # Preserve test execution logs & reports as downloadable artifacts
+  artifacts:
+    when: always
+    paths:
+      - target/surefire-reports/
+    expire_in: 7 days
