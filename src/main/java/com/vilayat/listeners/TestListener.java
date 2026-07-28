@@ -4,6 +4,7 @@ import com.aventstack.extentreports.ExtentReports;
 import com.aventstack.extentreports.ExtentTest;
 import com.aventstack.extentreports.Status;
 import com.vilayat.base.BaseTest;
+import com.vilayat.base.DriverFactory;
 import com.vilayat.reports.ExtentManager;
 import com.vilayat.utils.ScreenshotUtils;
 import org.openqa.selenium.WebDriver;
@@ -34,7 +35,7 @@ public class TestListener implements ITestListener {
         // Grab the driver from the test instance so we can screenshot at the moment of failure.
         Object currentInstance = result.getInstance();
         if (currentInstance instanceof BaseTest) {
-            WebDriver driver = ((BaseTest) currentInstance).getDriver();
+            WebDriver driver = DriverFactory.getDriver();
             String screenshotPath = ScreenshotUtils.captureScreenshot(driver, result.getMethod().getMethodName());
             if (screenshotPath != null) {
                 test.get().addScreenCaptureFromPath(screenshotPath);

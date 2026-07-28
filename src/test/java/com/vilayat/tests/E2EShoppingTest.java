@@ -4,11 +4,12 @@ import com.vilayat.base.BaseTest;
 import com.vilayat.pages.GreenKartPage;
 import com.vilayat.utils.ConfigReader;
 import com.vilayat.utils.TestData;
+
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class E2EShoppingTest extends BaseTest {
-
     @Test
     public void verifyEndToEndShoppingFlow() {
         driver.get(ConfigReader.getBaseUrl());
