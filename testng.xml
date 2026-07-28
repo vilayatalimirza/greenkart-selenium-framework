@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <suite name="GreenKart Test Suite">
+	<listeners>
+	    <listener class-name="com.vilayat.listeners.TestListener"/>
+	</listeners>
     <test name="E2E Shopping Test">
         <classes>
             <class name="com.vilayat.tests.E2EShoppingTest"/>
+            <class name="com.vilayat.tests.PromoCodeTest"/>
+            <class name="com.vilayat.tests.SearchProductTest"/>
         </classes>
     </test>
 </suite>
