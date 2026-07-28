@@ -19,7 +19,7 @@ run_selenium_tests:
 
   # Execute the test suite
   script:
-    - mvn clean test -Dheadless=true
+    - mvn clean test
 
   # Preserve test execution logs & reports as downloadable artifacts
   artifacts:
