@@ -1,9 +1,11 @@
 package com.vilayat.pages;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import com.vilayat.utils.WaitUtils;
@@ -112,13 +114,24 @@ public class GreenKartPage {
     public String getCartItemCount() {
         return driver.findElement(cartCount).getText();
     }
-    public java.util.List<String> getVisibleProductNames() {
-        com.vilayat.utils.WaitUtils.waitForVisible(wait, productNames);
-        java.util.List<WebElement> products = driver.findElements(productNames);
-        java.util.List<String> names = new java.util.ArrayList<>();
-        for (WebElement p : products) {
-            names.add(p.getText().split("-")[0].trim());
+    
+    public List<String> getVisibleProductNames() {
+        // Use your framework's existing WaitUtils and class-level locator
+        WaitUtils.waitForVisible(wait, this.productNames);
+        
+        List<WebElement> products = driver.findElements(this.productNames);
+        List<String> visibleNames = new ArrayList<>();
+        
+        for (int i = 0; i < products.size(); i++) {
+            try {
+                visibleNames.add(products.get(i).getText());
+            } catch (StaleElementReferenceException e) {
+                // If the DOM refreshes mid-loop, re-fetch the list and try this index again
+                products = driver.findElements(this.productNames);
+                visibleNames.add(products.get(i).getText());
+            }
         }
-        return names;
+        
+        return visibleNames;
     }
 }
