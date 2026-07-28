@@ -1,5 +1,5 @@
 # 1. Base Environment
-image: maven:3.8.6-openjdk-11
+image: maven:3.9.6-eclipse-temurin-17
 
 # 2. Pipeline Stages
 stages:
