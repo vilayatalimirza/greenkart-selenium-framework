@@ -3,8 +3,7 @@ package com.vilayat.utils;
 public class TestData {
 
     // ── Application ──────────────────────────────────────────────────────────
-    public static final String APP_URL = "https://rahulshettyacademy.com/seleniumPractise/";
-
+    
     // ── Search ───────────────────────────────────────────────────────────────
     public static final String SEARCH_VALID_FULL = "Brocolli";
     public static final String SEARCH_VALID_TOMATO = "Tomato";
@@ -30,6 +29,9 @@ public class TestData {
     public static final int QTY_MIN = 1;
 
     // ── Promo Codes ──────────────────────────────────────────────────────────
+    public static final String PROMO_TRAILING_SPACES = "rahulshettyacademy ";
+    public static final String PROMO_INVALID_ALPHANUMERIC = "TEST123";
+    public static final String PROMO_LONG_STRING = "rahulshettyacademythisisaveryextrastringtomakeitoverahundredcharacterslongforboundarytesting123456";
     public static final String PROMO_VALID = "rahulshettyacademy";
     public static final String PROMO_INVALID = "INVALID123";
     public static final String PROMO_EMPTY = "";
@@ -37,6 +39,7 @@ public class TestData {
     public static final String PROMO_NUMERIC = "123456";
     public static final String PROMO_MIXED_CASE = "RahulShettyAcademy";
     public static final String PROMO_LEADING_SPACES = " rahulshettyacademy";
+    public static final String PROMO_EMPTY_MSG = "Empty code ..!";
 
     // ── Place Order ──────────────────────────────────────────────────────────
     public static final String COUNTRY_INDIA = "India";

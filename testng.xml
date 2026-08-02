@@ -9,6 +9,14 @@
             <class name="com.vilayat.tests.PromoCodeTest"/>
             <class name="com.vilayat.tests.SearchProductTest"/>
             <class name="com.vilayat.tests.TopDealsTest"/>
+            <class name="com.vilayat.tests.HomePageSmokeTest"/>
+            <class name="com.vilayat.tests.SearchEdgeCasesTest"/> 
+            <class name="com.vilayat.tests.AddToCartTest"/> 
+            <class name="com.vilayat.tests.CheckoutTest"/>
+            <class name="com.vilayat.tests.CartPopupTest"/> 
+            <class name="com.vilayat.tests.QuantityTest"/>
+            <class name="com.vilayat.tests.ProductListTest"/> 
+            <class name="com.vilayat.tests.PlaceOrderTest"/>
         </classes>
     </test>
 </suite>
