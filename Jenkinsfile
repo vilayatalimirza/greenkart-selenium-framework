@@ -22,7 +22,7 @@ pipeline {
                 // allowing the 'post' section to run and generate your ExtentReports.
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     // Assuming you pass a headless flag and point to your suite
-                    sh 'mvn clean test -DsuiteXmlFile=testng-customsuite.xml' 
+                    bat 'mvn clean test -DsuiteXmlFile=testng-customsuite.xml' 
                 }
             }
         }
