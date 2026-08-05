@@ -5,7 +5,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import com.vilayat.utils.WaitUtils;
@@ -188,12 +190,19 @@ public class GreenKartPage {
     }
     
     public List<String> getVisibleProductNames() {
-    	WaitUtils.waitForVisible(wait, productNames);
-        List<WebElement> products = driver.findElements(this.productNames);
-        List<String> visibleNames = new ArrayList<>();
-        for (int i = 0; i < products.size(); i++) {
-                visibleNames.add(products.get(i).getText().split("-")[0].trim());
-        }
+    	
+    	List<String> visibleNames = new ArrayList<>();
+    	try {
+    	
+	    	WaitUtils.waitForVisible(wait, productNames);
+	        List<WebElement> products = driver.findElements(this.productNames);
+	        
+	        for (int i = 0; i < products.size(); i++) {
+	            visibleNames.add(products.get(i).getText().split("-")[0].trim());
+        	}
+        }catch(TimeoutException e){
+    		return visibleNames;
+    	}
         return visibleNames;
     }
     
@@ -202,7 +211,7 @@ public class GreenKartPage {
     }
 
     public boolean isCartIconDisplayed() {
-        return driver.findElement(cartIcon).isDisplayed();
+        return WaitUtils.waitForVisible(wait,cartIcon).isDisplayed();
     }
     
     public String getHomepageCartTotal() {
@@ -285,14 +294,16 @@ public class GreenKartPage {
     }
 
     public void addProductToCartByName(String productName) {
-        int index = findProductIndex(productName);
-        driver.findElements(addToCartButtons).get(index).click();
-        WaitUtils.waitForVisible(wait, addToCartButtons);
+    	By dynamicButton = By.xpath("//h4[contains(text(), '" + productName + "')]/parent::div//button");
+        WebElement element = driver.findElement(dynamicButton);
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center'});", element);
+        element.click();
+        WaitUtils.waitForText(wait, element, "ADDED"); 
     }
 
     public String getAddToCartButtonText(String productName) {
-        int index = findProductIndex(productName);
-        return driver.findElements(addToCartButtons).get(index).getText();
+    	By dynamicButton = By.xpath("//h4[contains(text(), '" + productName + "')]/parent::div//button");
+    	return driver.findElement(dynamicButton).getText();
     }
 
 

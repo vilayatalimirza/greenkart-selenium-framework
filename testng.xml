@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<suite name="GreenKart Test Suite" parallel="classes" thread-count="4">
+<suite name="GreenKart Test Suite" parallel="classes" thread-count="8">
 	<listeners>
 	    <listener class-name="com.vilayat.listeners.TestListener"/>
 	</listeners>
     <test name="GreenKart Tests">
         <classes>
-            <class name="com.vilayat.tests.E2EShoppingTest"/>
+   		    <class name="com.vilayat.tests.E2EShoppingTest"/>
             <class name="com.vilayat.tests.PromoCodeTest"/>
             <class name="com.vilayat.tests.SearchProductTest"/>
             <class name="com.vilayat.tests.TopDealsTest"/>
@@ -16,7 +16,8 @@
             <class name="com.vilayat.tests.CartPopupTest"/> 
             <class name="com.vilayat.tests.QuantityTest"/>
             <class name="com.vilayat.tests.ProductListTest"/> 
-            <class name="com.vilayat.tests.PlaceOrderTest"/>
+            <class name="com.vilayat.tests.PlaceOrderTest"/> 
+            <class name="com.vilayat.tests.ProductApiTest"/>
         </classes>
     </test>
 </suite>

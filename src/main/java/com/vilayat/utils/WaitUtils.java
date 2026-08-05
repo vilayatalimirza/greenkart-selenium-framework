@@ -14,5 +14,10 @@ public class WaitUtils {
     public static WebElement waitForClickable(WebDriverWait wait, By locator) {
         return wait.until(ExpectedConditions.elementToBeClickable(locator));
     }
-    
+    public static boolean waitForText(WebDriverWait wait, WebElement element,String text) {
+        return wait.until(ExpectedConditions.textToBePresentInElement(element, text));
+    }
+    public static boolean urlHasText(WebDriverWait wait, String text) {
+        return wait.until(ExpectedConditions.urlContains(text));
+    }
 }

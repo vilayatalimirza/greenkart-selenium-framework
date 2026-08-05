@@ -3,10 +3,7 @@ package com.vilayat.tests;
 import com.vilayat.base.BaseTest;
 import com.vilayat.pages.GreenKartPage;
 import com.vilayat.utils.ConfigReader;
-import com.vilayat.utils.TestData;
-import com.vilayat.utils.WaitUtils;
 
-import org.openqa.selenium.By;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
