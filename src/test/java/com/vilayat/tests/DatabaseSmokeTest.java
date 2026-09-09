@@ -20,16 +20,16 @@ public class DatabaseSmokeTest {
     public void verifyProductRetrievalFromDatabase() throws SQLException {
         // Arrange: Parameterized query for enterprise security
         String query = "SELECT price, category FROM products WHERE product_name = ?;";
-        String targetProduct = "Brocolli"; // Aligned with your seed data
+        String targetProduct = "Brocolli"; 
         
-        // Act: Execute query using Sprint 2 Utility
+        // Act: Execute query using Database Utility
         ResultSet resultSet = DBUtils.executeParameterizedQuery(query, targetProduct);
         
         // Assert: Validate the data integrity
         Assert.assertNotNull(resultSet, "ResultSet returned null.");
         Assert.assertTrue(resultSet.next(), "No data found for product: " + targetProduct);
 
-        // Extract data and assert against your definitive baseline
+        // Extract data and assert against definitive baseline
         double actualPrice = resultSet.getDouble("price");
         String actualCategory = resultSet.getString("category");
 

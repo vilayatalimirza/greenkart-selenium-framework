@@ -23,7 +23,6 @@ public class DBUtils {
         }
     }
 
-    // Refactored: Enterprise SELECT with dynamic parameters
     public static ResultSet executeParameterizedQuery(String query, Object... params) {
         try {
             PreparedStatement pstmt = connection.prepareStatement(query);
@@ -39,7 +38,6 @@ public class DBUtils {
         }
     }
 
-    // Refactored: Enterprise DML (INSERT, UPDATE, DELETE) with dynamic parameters
     public static int executeParameterizedUpdate(String query, Object... params) {
         try {
             PreparedStatement pstmt = connection.prepareStatement(query);

@@ -11,7 +11,6 @@ import java.sql.SQLException;
 
 public class DatabaseCRUDTest {
 
-    // Aligned to match your schema's clean naming convention
     private final String testProductName = "Automation Apple"; 
 
     @BeforeClass
