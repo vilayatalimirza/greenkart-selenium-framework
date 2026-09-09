@@ -1,6 +1,7 @@
 package com.vilayat.utils;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -19,5 +20,8 @@ public class WaitUtils {
     }
     public static boolean urlHasText(WebDriverWait wait, String text) {
         return wait.until(ExpectedConditions.urlContains(text));
-    }
+    } 
+    public static WebDriver switchToIframe(WebDriverWait wait, By locator) {
+        return wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(locator));
+    } 
 }

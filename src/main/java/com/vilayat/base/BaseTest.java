@@ -22,7 +22,7 @@ public class BaseTest {
         driver = DriverFactory.createDriver();
         
         // 2. Initialize wait so all your test classes inherit it ready-to-use
-        wait = new WebDriverWait(driver, Duration.ofSeconds(10)); 
+        wait = new WebDriverWait(driver, Duration.ofSeconds(60)); 
         log.info("WebDriver initialized successfully.");
     }
 

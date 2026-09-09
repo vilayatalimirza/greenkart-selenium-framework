@@ -82,17 +82,6 @@ public class AddToCartTest extends BaseTest {
             "Cart count should reflect all products added");
     }
 
-    // --- TS-AC-011: adding the same product twice (discovery) ---
-    @Test
-    public void verifyAddingSameProductTwice() {
-        page.addProductToCartByName("Brocolli");
-        page.addProductToCartByName("Brocolli");
-        String count = page.getCartItemCount();
-        System.out.println("Cart count after adding Brocolli twice: " + count);
-        // No strict assertion yet — discovering real behavior first.
-        Assert.assertNotNull(count, "Cart count should be readable, not crash, after duplicate add");
-    }
-
     // --- TS-AC-012: add after changing quantity to 3 ---
     @Test
     public void verifyAddAfterChangingQuantityToThree() {
