@@ -1,15 +1,6 @@
-name: Enterprise UI-DB Automation Pipeline
-
-on:
-  push:
-    branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
-
 jobs:
-  build-and-test:
+  test:
     runs-on: ubuntu-latest
-
     services:
       mysql:
         image: mysql:8.0
@@ -22,24 +13,38 @@ jobs:
           --health-cmd="mysqladmin ping"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=3
-
+          --health-retries=5
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-      
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-        cache: maven
-
-    - name: Initialize Database Schema and Data
-      run: |
-        mysql -h 127.0.0.1 -P 3306 -u root -proot greenkart_db < src/test/resources/init.sql
-        
-    - name: Run Maven Tests
-      env:
-        REQRES_API_KEY: ${{ secrets.REQRES_API_KEY }}
-      run: mvn clean test
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - name: Wait for MySQL and seed data
+        run: |
+          sleep 10
+          mysql -h 127.0.0.1 -uroot -proot greenkart_db -e "
+          CREATE TABLE products (
+              product_id INT AUTO_INCREMENT PRIMARY KEY,
+              product_name VARCHAR(100) NOT NULL,
+              price DECIMAL(10,2) NOT NULL,
+              category VARCHAR(50)
+          );
+          INSERT INTO products (product_name, price, category) VALUES
+          ('Cucumber', 30.00, 'Vegetable'),
+          ('Brocolli', 60.00, 'Vegetable'),
+          ('Beetroot', 40.00, 'Vegetable');
+          "
+      - name: Run tests
+        env:
+          DB_URL: jdbc:mysql://127.0.0.1:3306/greenkart_db
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: mvn clean test
+      - name: Upload Surefire Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/

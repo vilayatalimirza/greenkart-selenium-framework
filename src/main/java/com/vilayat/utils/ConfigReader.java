@@ -35,6 +35,13 @@ public class ConfigReader {
         return Integer.parseInt(properties.getProperty("explicitWaitSeconds"));
     }
     public static String getProperty(String key) {
+        // Convert property key to environment variable convention: db.url -> DB_URL
+        String envKey = key.toUpperCase().replace('.', '_');
+        String envValue = System.getenv(envKey);
+
+        if (envValue != null && !envValue.isEmpty()) {
+            return envValue;
+        }
         return properties.getProperty(key);
     }
 }
