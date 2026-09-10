@@ -2,6 +2,7 @@ package com.vilayat.base;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import com.vilayat.utils.ConfigReader;
@@ -18,7 +19,7 @@ public class DriverFactory {
         switch (browser) {
             case "chrome":
                 WebDriverManager.chromedriver().setup();
-                org.openqa.selenium.chrome.ChromeOptions options = new org.openqa.selenium.chrome.ChromeOptions();
+                ChromeOptions options = new ChromeOptions();
 
                 if (System.getenv("CI") != null) {
                     options.addArguments("--headless=new");
