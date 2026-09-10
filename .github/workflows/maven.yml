@@ -28,7 +28,7 @@ jobs:
     steps:
     
     - name: Checkout Code
-      uses: actions/checkout@v4
+     	  uses: actions/checkout@v4
 	  
 	  
 	- name: Set up JDK 21
@@ -39,7 +39,7 @@ jobs:
 	        cache: maven
 
     - name: Initialize Database Schema and Data
-      run: |
+    	  run: |
         mysql -h 127.0.0.1 -P 3306 -u root -proot greenkart_db < src/test/resources/init.sql
 		
 	- name: Run Maven Tests
