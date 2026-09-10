@@ -68,6 +68,8 @@ public class HomePage {
             wait.until(ExpectedConditions.stalenessOf(firstProductBeforeSearch));
         } catch (Exception e) {}
     }
+    
+    
     public void clearSearchBox() {
         WebElement box = driver.findElement(searchBox);
         String currentValue = box.getDomProperty("value");

@@ -10,8 +10,6 @@ import org.testng.annotations.BeforeMethod;
 
 public class BaseTest {
     
-    // Protected instance variable so your test classes (e.g., SearchProductTest) 
-    // can access the driver directly without needing to call getDriver() every time.
     protected WebDriver driver;
     protected WebDriverWait wait; // <-- 1. Declare wait here
     protected static final Logger log = LogManager.getLogger(BaseTest.class);

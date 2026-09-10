@@ -148,20 +148,14 @@ public class GreenKartPage {
     
     public void searchProduct(String productName) {
     	WaitUtils.waitForVisible(wait, productNames);
-        // 1. Grab a reference to the first product on the screen BEFORE we search
-        WebElement firstProductBeforeSearch = driver.findElements(this.productNames).get(0);
+    	WebElement box = driver.findElement(searchBox);
+        box.clear();
+        box.sendKeys(productName);
         
-        // 2. Perform the search
-        driver.findElement(searchBox).clear();
-        driver.findElement(searchBox).sendKeys(productName);
-        
-        // 3. Wait for the UI to re-render the list. 
-        // We know it's done rendering when that old first element detaches from the DOM (goes stale).
         try {
-            wait.until(ExpectedConditions.stalenessOf(firstProductBeforeSearch));
+            wait.until(ExpectedConditions.textToBePresentInElementLocated(productNames, productName));
         } catch (Exception e) {
-            // If it times out or throws an error, the DOM might have been so fast it already updated. 
-            // We safely swallow this so the test can continue.
+        	System.err.println("Warning: UI synchronization timeout during search for " + productName);
         }
     }
     
@@ -192,17 +186,29 @@ public class GreenKartPage {
     public List<String> getVisibleProductNames() {
     	
     	List<String> visibleNames = new ArrayList<>();
-    	try {
-    	
-	    	WaitUtils.waitForVisible(wait, productNames);
-	        List<WebElement> products = driver.findElements(this.productNames);
-	        
-	        for (int i = 0; i < products.size(); i++) {
-	            visibleNames.add(products.get(i).getText().split("-")[0].trim());
-        	}
-        }catch(TimeoutException e){
-    		return visibleNames;
-    	}
+        int maxRetries = 3;
+        int attempt = 0;
+
+        while (attempt < maxRetries) {
+            try {
+                WaitUtils.waitForVisible(wait, productNames);
+                List<WebElement> products = driver.findElements(this.productNames);
+                visibleNames.clear();
+                for (int i = 0; i < products.size(); i++) {
+                    visibleNames.add(products.get(i).getText().split("-")[0].trim());
+                }
+                break; 
+                
+            } catch (StaleElementReferenceException e) {
+                attempt++;
+                System.err.println("DOM refreshed mid-execution. Retrying stale element fetch (Attempt " + attempt + " of " + maxRetries + ")...");
+                if (attempt == maxRetries) {
+                    throw e; // Fail the test if the DOM won't settle after 3 attempts
+                }
+            } catch (TimeoutException e) {
+                return visibleNames; // Return empty list if nothing is visible
+            }
+        }
         return visibleNames;
     }
     
@@ -305,8 +311,14 @@ public class GreenKartPage {
     	By dynamicButton = By.xpath("//h4[contains(text(), '" + productName + "')]/parent::div//button");
     	return driver.findElement(dynamicButton).getText();
     }
-
-
+    
+    public double getProductPrice(String productName) {
+        By priceLocator = By.xpath("//h4[contains(text(), '" + productName + "')]/parent::div/p[@class='product-price']");
+        WaitUtils.waitForVisible(wait, priceLocator);
+        String priceText = driver.findElement(priceLocator).getText();
+        return Double.parseDouble(priceText);
+    }
+    
 	public java.util.List<String> getCheckoutProductNames() {
 	    WaitUtils.waitForVisible(wait, checkoutProductNames);
 	    java.util.List<String> names = new java.util.ArrayList<>();
