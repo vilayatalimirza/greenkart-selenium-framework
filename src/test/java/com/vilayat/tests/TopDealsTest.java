@@ -2,6 +2,7 @@ package com.vilayat.tests;
 
 import java.util.Set;
 
+import org.openqa.selenium.By;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -10,13 +11,14 @@ import com.vilayat.pages.GreenKartPage;
 import com.vilayat.pages.TopDealsPage;
 import com.vilayat.utils.ConfigReader;
 import com.vilayat.utils.TestData;
+import com.vilayat.utils.WaitUtils;
 
 public class TopDealsTest extends BaseTest {
 
     @Test
     public void verifyTopDealsSearch() {
         GreenKartPage greenKartPage = new GreenKartPage(driver, wait);
-        greenKartPage.waitForPageLoad();
+        WaitUtils.waitForVisible(wait, By.id("search-field"));
         
         driver.get(ConfigReader.getBaseUrl());
         
