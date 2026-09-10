@@ -130,7 +130,11 @@ public class GreenKartPage {
         WebElement promoElement = WaitUtils.waitForVisible(wait, promoInfoText);
         WaitUtils.waitForText(wait, promoElement, "Code applied ..!");
     }
-
+    
+    public void waitForPageLoad() {
+        WaitUtils.waitForVisible(wait, productNames);
+    }
+    
     public void waitForDiscountToApply(String oldTotal) {
         WaitUtils.waitForTextToChange(wait, checkoutCartTotalAfterDiscount, oldTotal);
     }
@@ -309,23 +313,22 @@ public class GreenKartPage {
     }
 
     public void addProductToCartByName(String productName) {
-    	By dynamicButton = By.xpath("//h4[contains(text(), '" + productName + "')]/parent::div//button");
-        WebElement element = driver.findElement(dynamicButton);
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center'});", element);
-        element.click();
-        WaitUtils.waitForText(wait, element, "ADDED"); 
+    	By dynamicButton = By.xpath("//h4[contains(., '" + productName + "')]/parent::div//button");
+    	WebElement button = WaitUtils.waitForClickable(wait, dynamicButton);
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center'});", button);
+        button.click();
+        WaitUtils.waitForText(wait, button, "ADDED"); 
     }
 
     public String getAddToCartButtonText(String productName) {
-    	By dynamicButton = By.xpath("//h4[contains(text(), '" + productName + "')]/parent::div//button");
-    	return driver.findElement(dynamicButton).getText();
+        By dynamicButton = By.xpath("//h4[contains(., '" + productName + "')]/parent::div//button");
+        return WaitUtils.waitForVisible(wait, dynamicButton).getText();
     }
     
     public double getProductPrice(String productName) {
-        By priceLocator = By.xpath("//h4[contains(text(), '" + productName + "')]/parent::div/p[@class='product-price']");
-        WaitUtils.waitForVisible(wait, priceLocator);
-        String priceText = driver.findElement(priceLocator).getText();
-        return Double.parseDouble(priceText);
+        By priceLocator = By.xpath("//h4[contains(., '" + productName + "')]/parent::div/p[@class='product-price']");
+        WebElement priceElement = WaitUtils.waitForVisible(wait, priceLocator);
+        return Double.parseDouble(priceElement.getText().trim());
     }
     
 	public java.util.List<String> getCheckoutProductNames() {

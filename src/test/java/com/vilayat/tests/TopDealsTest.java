@@ -16,6 +16,7 @@ public class TopDealsTest extends BaseTest {
     @Test
     public void verifyTopDealsSearch() {
         GreenKartPage greenKartPage = new GreenKartPage(driver, wait);
+        greenKartPage.waitForPageLoad();
         
         driver.get(ConfigReader.getBaseUrl());
         

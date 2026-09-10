@@ -4,6 +4,8 @@ import com.vilayat.base.BaseTest;
 import com.vilayat.pages.GreenKartPage;
 import com.vilayat.utils.ConfigReader;
 import com.vilayat.utils.TestData;
+import com.vilayat.utils.WaitUtils;
+
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -16,6 +18,7 @@ public class AddToCartTest extends BaseTest {
     public void navigateToHomepage() {
         driver.get(ConfigReader.getBaseUrl());
         page = new GreenKartPage(driver, wait);
+        page.waitForPageLoad();
     }
 
     // --- TS-AC-001 / 003: single product increases cart count ---

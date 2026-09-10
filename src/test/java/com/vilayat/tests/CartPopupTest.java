@@ -18,6 +18,7 @@ public class CartPopupTest extends BaseTest {
     public void navigateToHomepage() {
         driver.get(ConfigReader.getBaseUrl());
         page = new GreenKartPage(driver, wait);
+        page.waitForPageLoad();
     }
 
     // --- TS-CP-001: popup opens on clicking cart icon ---

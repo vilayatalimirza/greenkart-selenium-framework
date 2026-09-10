@@ -22,6 +22,7 @@ public class DatabaseSyncTest extends BaseTest {
     public void synchronizeAllProductsFromUI() {
         driver.get(ConfigReader.getBaseUrl());
         GreenKartPage page = new GreenKartPage(driver, wait);
+        page.waitForPageLoad();
 
         System.out.println("Scanning GreenKart UI for live product catalog...");
 

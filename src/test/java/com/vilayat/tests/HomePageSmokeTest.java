@@ -15,6 +15,7 @@ public class HomePageSmokeTest extends BaseTest {
     public void navigateToHomepage() {
         driver.get(ConfigReader.getBaseUrl());
         greenKartPage = new GreenKartPage(driver, wait);
+        greenKartPage.waitForPageLoad();
     }
 
     @Test

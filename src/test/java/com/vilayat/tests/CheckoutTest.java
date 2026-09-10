@@ -15,9 +15,10 @@ public class CheckoutTest extends BaseTest {
     private GreenKartPage page;
 
     @BeforeMethod
-    public void setupCartWithProducts() {
+    public void navigateToHomepage() {
         driver.get(ConfigReader.getBaseUrl());
         page = new GreenKartPage(driver, wait);
+        page.waitForPageLoad();
     }
 
     // --- TS-CO-002 / 008: correct number of distinct products displayed ---

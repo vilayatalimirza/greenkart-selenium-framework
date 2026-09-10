@@ -17,6 +17,7 @@ public class PlaceOrderTest extends BaseTest {
     public void setupCartAndNavigateToPlaceOrder() {
         driver.get(ConfigReader.getBaseUrl());
         page = new GreenKartPage(driver, wait);
+        page.waitForPageLoad();
         page.addProductToCartByName("Brocolli");
         page.proceedToCheckout();
     }

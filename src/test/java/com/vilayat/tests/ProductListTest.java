@@ -17,6 +17,7 @@ public class ProductListTest extends BaseTest {
     public void navigateToHomepage() {
         driver.get(ConfigReader.getBaseUrl());
         page = new GreenKartPage(driver, wait);
+        page.waitForPageLoad();
     }
 
     // TS-PL-001: Verify all products are displayed

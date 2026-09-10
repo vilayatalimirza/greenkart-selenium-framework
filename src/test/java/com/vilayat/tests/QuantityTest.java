@@ -15,6 +15,7 @@ public class QuantityTest extends BaseTest {
     public void navigateToHomepage() {
         driver.get(ConfigReader.getBaseUrl());
         page = new GreenKartPage(driver, wait);
+        page.waitForPageLoad();
     }
 
     // TS-QT-001: Verify default product quantity

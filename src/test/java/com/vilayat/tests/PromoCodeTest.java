@@ -30,6 +30,7 @@ public class PromoCodeTest extends BaseTest {
         driver.get(ConfigReader.getBaseUrl());
 
         GreenKartPage greenKartPage = new GreenKartPage(driver, wait);
+        greenKartPage.waitForPageLoad();
         greenKartPage.addItemsToCart(TestData.PRODUCTS_E2E);
         greenKartPage.proceedToCheckout();
         greenKartPage.applyPromoCode(promoCode);

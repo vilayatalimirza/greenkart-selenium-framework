@@ -16,6 +16,7 @@ public class SearchProductTest extends BaseTest {
         driver.get(ConfigReader.getBaseUrl());
 
         GreenKartPage greenKartPage = new GreenKartPage(driver, wait);
+        greenKartPage.waitForPageLoad();
         Assert.assertTrue(greenKartPage.isLogoDisplayed(), "Logo should be visible on page load");
 
         greenKartPage.searchProduct(TestData.SEARCH_VALID_FULL);

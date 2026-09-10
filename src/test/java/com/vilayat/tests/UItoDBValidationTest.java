@@ -26,6 +26,7 @@ public class UItoDBValidationTest extends BaseTest {
     public void verifyUIPriceMatchesDatabaseTruth() throws SQLException {
     	driver.get(ConfigReader.getBaseUrl());
         page = new GreenKartPage(driver, wait);
+        page.waitForPageLoad();
         String targetProduct = "Brocolli";
         
         String query = "SELECT price FROM products WHERE product_name = ?;";

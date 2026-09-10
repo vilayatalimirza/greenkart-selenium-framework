@@ -28,6 +28,7 @@ public class DatabaseDrivenSearchTest extends BaseTest {
     public void verifySearchFunctionalityUsingDBData(String dbProductName) {
         driver.get(ConfigReader.getBaseUrl());
         GreenKartPage page = new GreenKartPage(driver, wait);
+        page.waitForPageLoad();
         
         System.out.println("Executing UI Search Test for: " + dbProductName);
 
