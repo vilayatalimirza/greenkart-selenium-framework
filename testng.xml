@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<suite name="GreenKart Test Suite" parallel="classes" thread-count="8">
+<suite name="GreenKart Test Suite" parallel="classes" thread-count="4">
 	<listeners>
 	    <listener class-name="com.vilayat.listeners.TestListener"/>
 	</listeners>
