@@ -15,7 +15,6 @@ jobs:
           --health-timeout=5s
           --health-retries=5
     steps:
-<<<<<<< HEAD
       - uses: actions/checkout@v4
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -49,30 +48,3 @@ jobs:
         with:
           name: surefire-reports
           path: target/surefire-reports/
-=======
-    - name: Checkout Code
-      uses: actions/checkout@v4
-      
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-        cache: maven
-
-    - name: Initialize Database Schema and Data
-      run: |
-        mysql -h 127.0.0.1 -P 3306 -u root -proot greenkart_db < src/test/resources/init.sql
-        
-    - name: Run Maven Tests
-      env:
-        REQRES_API_KEY: ${{ secrets.REQRES_API_KEY }}
-      run: mvn clean test
-    - name: Upload Surefire Reports
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: surefire-reports
-        path: target/surefire-reports/
-    
->>>>>>> 03efac4802ed42e61007621242c593d75ee0675c
