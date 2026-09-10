@@ -1,5 +1,8 @@
 package com.vilayat.base;
 
+import java.time.Duration;
+
+import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -9,7 +12,7 @@ import com.vilayat.utils.ConfigReader;
 
 public class DriverFactory {
     
-    // 1. Declare the ThreadLocal variable to isolate WebDriver per thread
+    
     private static ThreadLocal<WebDriver> tlDriver = new ThreadLocal<>();
 
     public static WebDriver createDriver() {
@@ -20,12 +23,14 @@ public class DriverFactory {
             case "chrome":
                 WebDriverManager.chromedriver().setup();
                 ChromeOptions options = new ChromeOptions();
-
+                options.setPageLoadStrategy(PageLoadStrategy.EAGER);
                 if (System.getenv("CI") != null) {
-                    options.addArguments("--headless=new");
+                	options.addArguments("--headless=new");
                     options.addArguments("--no-sandbox");
                     options.addArguments("--disable-dev-shm-usage");
+                    options.addArguments("--disable-gpu");
                     options.addArguments("--window-size=1920,1080");
+                    options.addArguments("--remote-allow-origins=*");
                 }
                 
                 driver = new ChromeDriver(options);
@@ -42,21 +47,21 @@ public class DriverFactory {
                 );
         }
 
-        // 2. Assign the created driver to the current thread
+        driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(30));
         tlDriver.set(driver);
         return getDriver();
     }
 
-    // 3. Use this method anywhere in your framework to get the thread-safe driver
+    
     public static synchronized WebDriver getDriver() {
         return tlDriver.get();
     }
     
-    // 4. Safely quit the driver and clear the thread memory
+   
     public static void quitDriver() {
         if (getDriver() != null) {
             getDriver().quit();
-            tlDriver.remove(); // Essential to prevent memory leaks in parallel execution
+            tlDriver.remove(); 
         }
     }
 }
