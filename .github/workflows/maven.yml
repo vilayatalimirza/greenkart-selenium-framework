@@ -10,7 +10,7 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    # 1. The Service Container: Spin up a fresh MySQL server
+    
     services:
       mysql:
         image: mysql:8.0
@@ -26,23 +26,25 @@ jobs:
           --health-retries=3
 
     steps:
-    # 2. Checkout the repository code
+    
     - name: Checkout Code
       uses: actions/checkout@v4
-
-    # 3. Setup Java 21 (Matches the POM compiler version)
-	- name: Set up JDK 17
+	  
+	  
+	- name: Set up JDK 21
 	      uses: actions/setup-java@v4
 	      with:
-	        java-version: '17'
+	        java-version: '21'
 	        distribution: 'temurin'
 	        cache: maven
 
-    # 4. Seed the ephemeral database using the script we created in Step 1
     - name: Initialize Database Schema and Data
       run: |
         mysql -h 127.0.0.1 -P 3306 -u root -proot greenkart_db < src/test/resources/init.sql
+		
+	- name: Run Maven Tests
+		  env:
+		  REQRES_API_KEY: ${{ secrets.REQRES_API_KEY }}
+	    run: mvn clean test	
 
-    # 5. Execute the Test Suite (The 'CI' env var triggers headless mode in DriverFactory)
-    - name: Run Maven Tests
-      run: mvn clean test
+ 

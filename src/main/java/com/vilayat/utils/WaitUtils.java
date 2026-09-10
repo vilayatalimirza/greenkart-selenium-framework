@@ -18,6 +18,13 @@ public class WaitUtils {
     public static boolean waitForText(WebDriverWait wait, WebElement element,String text) {
         return wait.until(ExpectedConditions.textToBePresentInElement(element, text));
     }
+    
+    public static boolean waitForTextToChange(WebDriverWait wait, By locator, String oldText) {
+        return wait.until(ExpectedConditions.not(
+            ExpectedConditions.textToBePresentInElementLocated(locator, oldText)
+        ));
+    }
+    
     public static boolean urlHasText(WebDriverWait wait, String text) {
         return wait.until(ExpectedConditions.urlContains(text));
     } 

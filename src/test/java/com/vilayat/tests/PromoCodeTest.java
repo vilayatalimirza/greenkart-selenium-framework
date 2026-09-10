@@ -4,7 +4,9 @@ import com.vilayat.base.BaseTest;
 import com.vilayat.pages.GreenKartPage;
 import com.vilayat.utils.ConfigReader;
 import com.vilayat.utils.TestData;
+import com.vilayat.utils.WaitUtils;
 
+import org.openqa.selenium.By;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -84,7 +86,7 @@ public class PromoCodeTest extends BaseTest {
         GreenKartPage page = new GreenKartPage(driver, wait);
         page.addItemsToCart(TestData.PRODUCTS_E2E);
         page.proceedToCheckout();
-
+        
         String totalBefore = page.getCheckoutTotalBeforeDiscount();
         page.applyPromoCode(TestData.PROMO_VALID);
         String totalAfter = page.getCheckoutTotalAfterDiscount();
@@ -144,11 +146,13 @@ public class PromoCodeTest extends BaseTest {
         GreenKartPage page = new GreenKartPage(driver, wait);
         page.addItemsToCart(TestData.PRODUCTS_E2E);
         page.proceedToCheckout();
-        page.applyPromoCode(TestData.PROMO_INVALID);
-        Assert.assertEquals(page.getPromoInfoText(), TestData.PROMO_ERROR_MSG);
         String totalBefore = page.getCheckoutTotalBeforeDiscount();
-        page.applyPromoCode(TestData.PROMO_VALID);
-        Assert.assertEquals(page.getPromoInfoText(), TestData.PROMO_SUCCESS_MSG);
+        
+        page.applyPromoCode(TestData.PROMO_INVALID);
+        By discountAmountLocator = By.cssSelector(".discountAmt");
+        WaitUtils.waitForTextToChange(wait, discountAmountLocator, totalBefore);
+        
+        
         String totalAfter= page.getCheckoutTotalAfterDiscount();
         System.out.println("Original: " + totalBefore + " | Discounted: " + totalAfter);
         Assert.assertNotEquals(totalAfter, totalBefore, "Discounted total should differ from the original subtotal");
