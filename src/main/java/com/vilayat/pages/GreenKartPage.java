@@ -125,7 +125,16 @@ public class GreenKartPage {
             // Message may legitimately stay the same on a repeat apply — not a failure by itself.
         }
     }
+    
+    public void waitForPromoCodeApplied() {
+        WebElement promoElement = WaitUtils.waitForVisible(wait, promoInfoText);
+        WaitUtils.waitForText(wait, promoElement, "Code applied ..!");
+    }
 
+    public void waitForDiscountToApply(String oldTotal) {
+        WaitUtils.waitForTextToChange(wait, checkoutCartTotalAfterDiscount, oldTotal);
+    }
+    
     public String getPromoInfoText() {
         WaitUtils.waitForVisible(wait, promoInfoText);
         return driver.findElement(promoInfoText).getText();

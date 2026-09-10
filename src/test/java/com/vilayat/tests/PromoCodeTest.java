@@ -6,7 +6,11 @@ import com.vilayat.utils.ConfigReader;
 import com.vilayat.utils.TestData;
 import com.vilayat.utils.WaitUtils;
 
+import java.time.Duration;
+
 import org.openqa.selenium.By;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -148,10 +152,9 @@ public class PromoCodeTest extends BaseTest {
         page.proceedToCheckout();
         String totalBefore = page.getCheckoutTotalBeforeDiscount();
         
-        page.applyPromoCode(TestData.PROMO_INVALID);
-        By discountAmountLocator = By.cssSelector(".discountAmt");
-        WaitUtils.waitForTextToChange(wait, discountAmountLocator, totalBefore);
-        
+        page.applyPromoCode(TestData.PROMO_VALID);
+        page.waitForPromoCodeApplied();
+        page.waitForDiscountToApply(totalBefore);
         
         String totalAfter= page.getCheckoutTotalAfterDiscount();
         System.out.println("Original: " + totalBefore + " | Discounted: " + totalAfter);

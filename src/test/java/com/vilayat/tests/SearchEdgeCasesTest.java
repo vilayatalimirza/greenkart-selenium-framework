@@ -22,15 +22,16 @@ public class SearchEdgeCasesTest extends BaseTest {
 
     @Test
     public void verifyPartialNameSearchShowsMatchingProduct() {
-        greenKartPage.searchProduct(TestData.SEARCH_PARTIAL);
-        List<String> results = greenKartPage.getVisibleProductNames();
+        String partialQuery = "ca"; // or your target partial string
+        greenKartPage.searchProduct(partialQuery);
 
-        Assert.assertFalse(results.isEmpty(), "Partial search should return at least one result");
-        for (String name : results) {
-            Assert.assertTrue(
-                name.toLowerCase().contains(TestData.SEARCH_PARTIAL.toLowerCase()),
-                "Unexpected product in partial search results: " + name
-            );
+        List<String> visibleProducts = greenKartPage.getVisibleProductNames();
+        Assert.assertFalse(visibleProducts.isEmpty(), "No products returned for partial query: " + partialQuery);
+
+        for (String product : visibleProducts) {
+            boolean matches = product.toLowerCase().contains(partialQuery.toLowerCase());
+            Assert.assertTrue(matches, 
+                "Unexpected product in partial search results: " + product + " (Searched for: " + partialQuery + ")");
         }
     }
 
