@@ -43,3 +43,10 @@ jobs:
       env:
         REQRES_API_KEY: ${{ secrets.REQRES_API_KEY }}
       run: mvn clean test
+    - name: Upload Surefire Reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: surefire-reports
+        path: target/surefire-reports/
+    
