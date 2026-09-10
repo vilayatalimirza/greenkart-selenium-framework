@@ -31,12 +31,12 @@ jobs:
       uses: actions/checkout@v4
 
     # 3. Setup Java 21 (Matches the POM compiler version)
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-        cache: maven
+	- name: Set up JDK 17
+	      uses: actions/setup-java@v4
+	      with:
+	        java-version: '17'
+	        distribution: 'temurin'
+	        cache: maven
 
     # 4. Seed the ephemeral database using the script we created in Step 1
     - name: Initialize Database Schema and Data
