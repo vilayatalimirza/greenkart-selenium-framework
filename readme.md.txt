@@ -1,6 +1,6 @@
 # 🛒 GreenKart Automation Framework
 
-A robust Selenium Automation Framework developed using **Java**, **Selenium WebDriver**, **TestNG**, and **Maven** for automating the GreenKart E-Commerce application.
+A robust Automation Framework developed using **Java**, **Selenium WebDriver**, **TestNG**, and **Maven** for automating the GreenKart E-Commerce application.
 
 This project demonstrates industry-standard automation practices including Page Object Model (POM), reusable utilities, scalable framework design, and end-to-end test automation.
 
