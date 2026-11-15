@@ -15,9 +15,9 @@ The figures below are from individual GitHub Actions runs. They are run-specific
 | [#18](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/35330099292) | 18 Sep 2026 | 93 | 93 | 0 | 0 | 0 | **100.0%** |
 | [#17](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/35285130645) | 17 Sep 2026 | 93 | 92 | 1 | 0 | 0 | **98.9%** |
 
-Run #20 failed in SearchEdgeCasesTest.verifyClearingSearchRestoresFullProductList: the test expected the partial search to narrow the product list, but it observed the full list. Run #21 passed. The search test and its search helper were not changed between those two runs, so the later pass is not evidence that the intermittent behavior has been fixed. See [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
+Run #20 failed in SearchEdgeCasesTest.verifyClearingSearchRestoresFullProductList. The test's product-list helper was counting hidden product elements, which could make a filtered list appear unchanged. A visibility-aware helper and result-state wait have since been added; run #23 and later runs will determine whether the issue is resolved. See [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
 
-Run #17 failed in PlaceOrderTest.verifyCountryDropdownContainsCountries while locating the country dropdown; run #18 passed. The exact-style XPath responsible for that failure is still present in the current page object and remains a known locator risk.
+Run #17 failed in PlaceOrderTest.verifyCountryDropdownContainsCountries while locating the country dropdown; run #18 passed. The exact-style XPath has since been replaced with a CSS selector for the select element; the new selector requires CI validation.
 
 **Interpretation:** run #21 is the latest recorded clean run at 93/93 (100%). The immediately preceding run was 92/93 (98.9%). Both results are retained here so the successful run does not erase the failure history.
 
@@ -30,7 +30,7 @@ Run #17 failed in PlaceOrderTest.verifyCountryDropdownContainsCountries while lo
 | Test support | Configuration reader, test data, screenshots, Log4j2 logging, TestNG listener and Extent Reports |
 | API examples | REST Assured GET/POST examples, response assertions, POJO mapping and JSON schema validation against Reqres |
 | Database exercises | JDBC utilities, parameterized queries, product retrieval, CRUD examples, UI-to-database comparison and catalog upsert example |
-| CI | GitHub Actions workflow with Chrome, MySQL service setup and Surefire report artifact |
+| CI | GitHub Actions workflow with Chrome and Surefire report artifact |
 
 ### What the default CI suite actually runs
 
@@ -41,7 +41,7 @@ The Maven Surefire configuration points to **testng.xml**. That suite currently 
 
 The five database test classes (DatabaseCRUDTest, DatabaseDrivenSearchTest, DatabaseSmokeTest, DatabaseSyncTest and UItoDBValidationTest) are present in the source tree but are **not listed in the default suite**. LoginViaAPITest is also outside the default suite and targets a separate demo authentication site.
 
-Therefore, the 93 executions in runs #17, #18, #20 and #21 do **not** represent database test coverage or every test class in the repository. The GitHub Actions workflow currently starts and seeds a MySQL service, but the default TestNG suite does not execute those database classes. This gap is documented rather than counted as coverage.
+Therefore, the 93 executions in runs #17, #18, #20 and #21 do **not** represent database test coverage or every test class in the repository. The GitHub Actions workflow validates only the configured UI and Reqres API suite. It does not start MySQL or execute the database classes.
 
 ## Architecture
 
@@ -71,7 +71,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the execution flow and the distinctio
 | MySQL Connector/J | 8.4.0 |
 | Extent Reports | 5.1.1 |
 | Log4j2 | 2.23.1 |
-| CI runtime | GitHub Actions, Ubuntu, Temurin JDK 21, MySQL 8 |
+| CI runtime | GitHub Actions, Ubuntu, Temurin JDK 21 |
 
 The CI runtime uses JDK 21 while the Maven compiler targets Java 17.
 
@@ -102,7 +102,7 @@ The database test classes are not part of the default testng.xml suite. They req
     $env:DB_USERNAME = "<your-db-user>"
     $env:DB_PASSWORD = "<your-db-password>"
 
-The database examples should be run and validated separately until their connection lifecycle, fixture consistency and parallel-safety issues are resolved. Their results are not included in the CI figures above.
+The database examples should be run and validated separately against the disposable fixture. They are not part of the default CI run. Their results are not included in the CI figures above.
 
 ## Reports and test documentation
 
@@ -116,9 +116,9 @@ The workbook is manual test documentation and is separate from the automated exe
 
 - The public GreenKart demo and Reqres API are external dependencies whose availability and data can change.
 - Only Chrome is covered by the linked successful CI run. The driver factory contains a Firefox branch, but no successful Firefox CI run is documented.
-- The five database test classes are not included in the default TestNG suite. MySQL setup in the current workflow should not be mistaken for database test coverage.
-- DBUtils currently uses a shared static JDBC connection and does not consistently close statements and result sets. It also converts some SQL errors into null or -1 return values.
-- The database fixture values in src/test/resources/init.sql differ from the values inserted by the GitHub Actions workflow. See KNOWN-ISSUES.md before running the database exercises.
+- The five database test classes are not included in the default TestNG suite. The default workflow does not start MySQL and should not be mistaken for database test coverage.
+- DBUtils now opens a connection per operation, closes JDBC resources with try-with-resources, returns detached row data and preserves SQL exceptions as causes.
+- The database fixture is provided in src/test/resources/init.sql for a separately configured disposable MySQL test database. See KNOWN-ISSUES.md before running the database exercises.
 - DatabaseSyncTest assigns the category "Vegetable" to every scraped product; the public UI does not provide verified category data for each product.
 - The Jenkinsfile and GitLab pipeline are present but are not validated CI paths. The Jenkinsfile references a suite file that is absent from the repository and uses a Windows batch step.
 - The country dropdown locator and one search edge-case test have observed failure history. See KNOWN-ISSUES.md.

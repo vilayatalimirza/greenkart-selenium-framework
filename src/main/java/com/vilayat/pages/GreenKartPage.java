@@ -168,6 +168,9 @@ public class GreenKartPage {
         box.sendKeys(productName);
 
         String normalizedQuery = productName.trim().toLowerCase(java.util.Locale.ROOT);
+        boolean matchingProductExpected = previousResults.stream()
+                .anyMatch(name -> name.toLowerCase(java.util.Locale.ROOT).contains(normalizedQuery));
+
         wait.until(currentDriver -> {
             try {
                 String enteredValue = currentDriver.findElement(searchBox).getDomProperty("value");
@@ -175,9 +178,8 @@ public class GreenKartPage {
                     return false;
                 }
 
-                List<WebElement> currentProducts = currentDriver.findElements(productNames);
                 List<String> currentNames = new ArrayList<>();
-                for (WebElement product : currentProducts) {
+                for (WebElement product : currentDriver.findElements(productNames)) {
                     if (product.isDisplayed()) {
                         currentNames.add(product.getText().split("-")[0].trim());
                     }
@@ -185,10 +187,12 @@ public class GreenKartPage {
 
                 boolean allResultsMatch = currentNames.stream()
                         .allMatch(name -> name.toLowerCase(java.util.Locale.ROOT).contains(normalizedQuery));
-                boolean originalListAlreadyMatched = previousResults.stream()
-                        .allMatch(name -> name.toLowerCase(java.util.Locale.ROOT).contains(normalizedQuery));
 
-                return allResultsMatch && (!currentNames.equals(previousResults) || originalListAlreadyMatched);
+                // If the original catalogue contains a match, wait for at least one
+                // matching visible card. Otherwise wait for a genuinely empty result.
+                return allResultsMatch && (matchingProductExpected
+                        ? !currentNames.isEmpty()
+                        : currentNames.isEmpty());
             } catch (org.openqa.selenium.StaleElementReferenceException e) {
                 return false;
             }
@@ -202,9 +206,15 @@ public class GreenKartPage {
     public void clearSearchBoxAndWaitForProductCount(int expectedCount) {
         driver.findElement(searchBox).clear();
 
-        wait.until(currentDriver ->
-                "".equals(currentDriver.findElement(searchBox).getDomProperty("value"))
-                        && currentDriver.findElements(productNames).size() == expectedCount);
+        wait.until(currentDriver -> {
+            if (!"".equals(currentDriver.findElement(searchBox).getDomProperty("value"))) {
+                return false;
+            }
+            long visibleCount = currentDriver.findElements(productNames).stream()
+                    .filter(WebElement::isDisplayed)
+                    .count();
+            return visibleCount == expectedCount;
+        });
     }
 
     public boolean isLogoDisplayed() {
@@ -234,8 +244,10 @@ public class GreenKartPage {
                 WaitUtils.waitForVisible(wait, productNames);
                 List<WebElement> products = driver.findElements(this.productNames);
                 visibleNames.clear();
-                for (int i = 0; i < products.size(); i++) {
-                    visibleNames.add(products.get(i).getText().split("-")[0].trim());
+                for (WebElement product : products) {
+                    if (product.isDisplayed()) {
+                        visibleNames.add(product.getText().split("-")[0].trim());
+                    }
                 }
                 break; 
                 

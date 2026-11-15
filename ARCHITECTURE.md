@@ -4,8 +4,6 @@
 
     GitHub Actions
           |
-          +--> MySQL 8 service and seed step
-          |
           +--> Maven Surefire
                    |
                    +--> testng.xml (default suite)
@@ -22,7 +20,7 @@
                    |
                    +--> Surefire XML/text reports --> CI artifact
 
-The database test classes exist in the repository but are not currently listed in testng.xml. The MySQL service is started and seeded by the workflow, but the default suite does not execute the database test classes. The CI pass counts must therefore not be presented as JDBC test coverage.
+The database test classes exist in the repository but are not currently listed in testng.xml. The default workflow does not start MySQL or execute the database test classes. The CI pass counts must therefore not be presented as JDBC test coverage.
 
 ## Default TestNG suite scope
 
@@ -55,7 +53,7 @@ Only Chrome is represented by the recorded successful CI run. The Firefox branch
 
 Classes under src/main/java/com/vilayat/pages encapsulate GreenKart page interactions. Tests should assert business outcomes rather than duplicate low-level locators and browser operations.
 
-The country dropdown currently uses an XPath tied to an exact inline style attribute. That locator caused a timeout in historical CI run #17 and remains a maintenance risk.
+The country dropdown locator was changed from an exact inline-style XPath to a CSS selector for the select element. The new selector needs CI validation; the historical timeout remains in the run history.
 
 ## Utilities and reporting
 
@@ -79,12 +77,11 @@ The database classes use a MySQL database separate from the public GreenKart app
 
 Important limitations before enabling these classes in a CI suite:
 
-1. DBUtils uses a single static Connection. This is not safe for parallel database classes.
-2. Query/update helpers do not consistently close Statements, PreparedStatements or ResultSets.
-3. Some SQL failures are returned as null or -1 instead of preserving the original exception.
-4. The workflow seed data and src/test/resources/init.sql contain different product values.
-5. DatabaseSyncTest assigns the same "Vegetable" category to every product scraped from the UI, although the UI does not provide verified category data.
-6. DatabaseDrivenSearchTest selects the first three database records without an explicit order or a guarantee that those names exist in the live UI.
+1. DBUtils now opens a connection per operation, closes JDBC resources with try-with-resources and returns detached row data rather than live ResultSet objects.
+2. SQL errors are surfaced as IllegalStateException with the original SQLException attached as the cause.
+3. The canonical database seed is src/test/resources/init.sql; the default UI/API workflow does not create a MySQL service.
+4. DatabaseSyncTest leaves category null when the public UI does not expose category data.
+5. DatabaseDrivenSearchTest now orders its selected rows by product_id, but those names are not guaranteed to exist in the live public UI.
 
 The database classes are therefore excluded from the default 93-execution CI metric. A separate deterministic database suite should be established after connection handling, fixtures and test isolation are corrected.
 
@@ -92,11 +89,9 @@ The database classes are therefore excluded from the default 93-execution CI met
 
 The validated pipeline is .github/workflows/maven.yml:
 
-1. Start MySQL 8 as a service container.
-2. Check out the repository.
-3. Set up Temurin JDK 21 (Maven compiles against Java 17).
-4. Create and seed the test database.
-5. Run mvn clean test using testng.xml.
-6. Upload target/surefire-reports even when tests fail.
+1. Check out the repository.
+2. Set up Temurin JDK 21 (Maven compiles against Java 17).
+3. Run mvn clean test using testng.xml.
+4. Upload target/surefire-reports even when tests fail.
 
 The GitHub Actions workflow is the only CI path with linked full-suite execution evidence. The Jenkinsfile and GitLab configuration require separate correction and validation.

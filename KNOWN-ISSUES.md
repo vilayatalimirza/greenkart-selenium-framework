@@ -21,15 +21,9 @@ These are separate, individual runs of the default TestNG suite. Run #21 is the 
 
 The assertion failed before the clear operation because the test expected the partial search to reduce the visible product list, but the observed count was not smaller than the original list.
 
-Run #21 passed all 93 executions. The relevant search test and shared search helper were unchanged between runs #20 and #21, so this is an observed intermittent failure, not a verified fix.
+Run #21 passed all 93 executions. Run #21 passed, but did not prove the issue fixed. A subsequent run #22 failed the same test. Code review found getVisibleProductNames() counted hidden product elements, so it did not reliably represent visible results. The helper now filters by isDisplayed(), and the search wait now distinguishes expected matching results from a true zero-result query. Run #23 and later runs will validate this change.
 
-Potential contributing issues in the current implementation:
-
-- GreenKartPage.searchProduct waits for the searched text to appear in a product-name element. For a query such as "Bro", that text may already exist in the unfiltered catalogue, so the wait can complete before the filtered list has updated.
-- The helper catches TimeoutException and logs a warning rather than propagating a synchronization failure.
-- GreenKartPage.getVisibleProductNames returns an empty list after a visibility timeout, which can make a page-load problem look like a valid zero-result search.
-
-The exact root cause has not yet been isolated. Improve synchronization around the result list and retain a regression run before marking this issue resolved.
+The helper now waits for the search input to contain the query and for the visible result state to match the expected outcome. For queries that should match an original product, at least one visible match is required; for unmatched queries, an empty visible list is expected. The search wait no longer swallows synchronization timeouts. The clear-search path waits for the original visible catalogue count. These changes are pending CI validation.
 
 ## Historical failure: country dropdown locator
 
@@ -53,7 +47,7 @@ The default testng.xml suite includes 12 UI test classes and ProductApiTest. It 
 - UItoDBValidationTest
 - LoginViaAPITest (separate external authentication demo)
 
-Therefore, the 93-test CI results do not validate the JDBC or UI-to-database test classes. The workflow currently starts and seeds MySQL, but these database classes are not run by the default Maven suite.
+Therefore, the 93-test CI results do not validate the JDBC or UI-to-database test classes. The default workflow does not start MySQL, and these database classes are not run by the default Maven suite.
 
 ## Database implementation risks
 
@@ -65,16 +59,11 @@ This creates concurrency and resource-leak risks if multiple database classes ar
 
 ### Fixture drift
 
-The workflow seed and src/test/resources/init.sql do not contain the same values.
-
-- The workflow seeds Cucumber at 30.00, Brocolli at 60.00 and Beetroot at 40.00.
-- init.sql seeds Brocolli at 120.00, Cauliflower at 60.00, Cucumber at 48.00 and Beetroot at 32.00.
-
-Database tests should use one canonical fixture so local and CI execution do not silently test different baselines.
+src/test/resources/init.sql is now the canonical disposable test-database seed. It contains Cucumber at 30.00, Brocolli at 60.00 and Beetroot at 40.00, matching DatabaseSmokeTest. The default workflow no longer creates a MySQL service. The DB suite requires a separately configured MySQL instance.
 
 ### Catalog sync category assumption
 
-DatabaseSyncTest currently passes "Vegetable" for every product found on the public UI. The page does not provide verified category data for every product, so this value should not be represented as a scraped or authoritative category.
+DatabaseSyncTest now passes a null category for products discovered through the public UI because the page does not provide verified category data.
 
 The test now counts successful and failed upserts separately and fails if a product cannot be synchronized. It writes only to the configured local test database. It does not connect to the GreenKart application's backend or prove that a production catalog is aligned.
 
@@ -92,10 +81,6 @@ DatabaseDrivenSearchTest selects three rows using LIMIT 3 without a deterministi
 
 ## Next engineering improvements
 
-1. Make search synchronization wait for the filtered result state rather than text that may already exist in the original catalogue.
-2. Replace the country dropdown's exact-style XPath with a stable locator.
-3. Refactor DBUtils to use scoped connections and try-with-resources; preserve SQL exceptions rather than returning null or -1.
-4. Align the workflow seed and init.sql, and isolate database test data.
-5. Remove the hard-coded "Vegetable" category from the catalog sync unless category data is actually available.
-6. Create a separate deterministic database suite before adding JDBC tests to the default parallel run.
-7. Correct or remove the Jenkinsfile and validate the GitLab pipeline before listing either as supported CI.
+1. Add a deterministic database-test workflow after validating the five excluded database classes against the disposable fixture.
+2. Review remaining live-site assumptions in UItoDBValidationTest and DatabaseDrivenSearchTest.
+3. Correct or remove the Jenkinsfile and validate the GitLab pipeline before listing either as supported CI.
