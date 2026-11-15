@@ -39,7 +39,7 @@ Some database tests assert fixed values for the seeded product `Brocolli` (price
 
 ### Catalog sync wording
 
-`DatabaseSyncTest` prints that the local database is “100% aligned with Production.” The code only attempts to upsert products scraped from the public demo UI into the separately configured local test database. It does not compare the entire production catalog or connect to the demo application's backend database. That success message overstates what the test proves and should be corrected.
+`DatabaseSyncTest` previously printed that the local database was “100% aligned with Production,” although it only upserts products scraped from the public demo UI into a separately configured local test database. The portfolio-readiness branch corrects this wording, reports successful and failed upserts separately, and fails the test if any visible product cannot be synchronized. It still does not compare the entire production catalog or connect to the demo application's backend database.
 
 ### CI configuration drift
 
