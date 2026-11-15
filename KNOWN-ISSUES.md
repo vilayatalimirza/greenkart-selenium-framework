@@ -1,61 +1,101 @@
 # Known issues and validation notes
 
-This file records observed failures and implementation risks. A passing run does not erase a prior failure.
+This file retains observed failures and implementation risks. A later passing run does not erase a previous failure.
 
-## Historical CI observations
+## CI execution history
 
-| Workflow run | Result | Evidence |
-|---|---|---|
-| [#17](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/35285130645) | 93 tests, 1 failure, 0 errors, 0 skipped | `PlaceOrderTest.verifyCountryDropdownContainsCountries` timed out waiting for `//select[@style='width: 200px;']` |
-| [#18](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/35330099292) | 93 tests, 0 failures, 0 errors, 0 skipped | Full Maven test job succeeded and Surefire reports were uploaded |
+| Workflow run | Date (UTC) | Executions | Passed | Failed | Errors | Skipped | First-attempt pass rate |
+|---|---|---:|---:|---:|---:|---:|---:|
+| [#21](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43769436492) | 15 Nov 2026 | 93 | 93 | 0 | 0 | 0 | 100.0% |
+| [#20](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43769427987) | 15 Nov 2026 | 93 | 92 | 1 | 0 | 0 | 98.9% |
+| [#18](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/35330099292) | 18 Sep 2026 | 93 | 93 | 0 | 0 | 0 | 100.0% |
+| [#17](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/35285130645) | 17 Sep 2026 | 93 | 92 | 1 | 0 | 0 | 98.9% |
 
-The latest successful run (#18) is a single execution snapshot: 93/93 passed (100% first-attempt pass rate for that run). It is not a long-term reliability statistic. Earlier workflow runs also include failures; the full run history is available in [GitHub Actions](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions).
+These are separate, individual runs of the default TestNG suite. Run #21 is the latest clean run, not a long-term reliability statistic. Each run covers 13 classes from testng.xml (12 UI classes and one Reqres API class); the database test classes are excluded.
 
-## Observed failure: country dropdown locator
+## Observed failure: search edge-case test
 
-**Test:** `PlaceOrderTest.verifyCountryDropdownContainsCountries`
+**Run:** #20  
+**Test:** SearchEdgeCasesTest.verifyClearingSearchRestoresFullProductList  
+**Observed result:** 92 passed, 1 failed, 0 errors, 0 skipped.
 
-**Observed in run #17:** Selenium waited 60 seconds for the element located by:
+The assertion failed before the clear operation because the test expected the partial search to reduce the visible product list, but the observed count was not smaller than the original list.
 
-```java
-//select[@style='width: 200px;']
-```
+Run #21 passed all 93 executions. The relevant search test and shared search helper were unchanged between runs #20 and #21, so this is an observed intermittent failure, not a verified fix.
 
-The element was not found, resulting in a `TimeoutException`. The failure is consistent with a brittle locator that depends on an exact inline style attribute. Run #18 passed, but a later pass alone does not prove the locator has been made robust. Prefer a stable semantic locator (label, name, id, or a scoped selector) after inspecting the live DOM.
+Potential contributing issues in the current implementation:
 
-## Implementation risks found during repository review
+- GreenKartPage.searchProduct waits for the searched text to appear in a product-name element. For a query such as "Bro", that text may already exist in the unfiltered catalogue, so the wait can complete before the filtered list has updated.
+- The helper catches TimeoutException and logs a warning rather than propagating a synchronization failure.
+- GreenKartPage.getVisibleProductNames returns an empty list after a visibility timeout, which can make a page-load problem look like a valid zero-result search.
 
-### Shared JDBC connection
+The exact root cause has not yet been isolated. Improve synchronization around the result list and retain a regression run before marking this issue resolved.
 
-`DBUtils` stores a single static `Connection`, while `testng.xml` executes test classes in parallel. Parallel database tests can share or close the same connection unexpectedly. Use a connection-per-test/per-operation strategy or a properly scoped connection provider before depending on concurrent database execution.
+## Historical failure: country dropdown locator
 
-### JDBC resource handling and error propagation
+**Run:** #17  
+**Test:** PlaceOrderTest.verifyCountryDropdownContainsCountries
 
-The current helper methods create statements and prepared statements without consistently closing them. Some query/update methods return `null` or `-1` after SQL errors, which can hide the original failure and cause less informative downstream assertions. Use try-with-resources and propagate meaningful exceptions.
+The test timed out locating the country dropdown with this exact-style XPath:
 
-### Database data assumptions
+    //select[@style='width: 200px;']
 
-Some database tests assert fixed values for the seeded product `Brocolli` (price 60.00, category Vegetable). The GitHub Actions workflow seeds these values in a dedicated MySQL service. This validates the test database setup and JDBC checks, not synchronization with the real GreenKart backend.
+Run #18 passed, but the same locator is still present in GreenKartPage. The later pass does not remove the locator risk. Prefer a stable id, name, label or scoped selector after checking the live DOM.
 
-### Catalog sync wording
+## Default suite scope: database tests are not executed
 
-`DatabaseSyncTest` previously printed that the local database was “100% aligned with Production,” although it only upserts products scraped from the public demo UI into a separately configured local test database. The portfolio-readiness branch corrects this wording, reports successful and failed upserts separately, and fails the test if any visible product cannot be synchronized. It still does not compare the entire production catalog or connect to the demo application's backend database.
+The default testng.xml suite includes 12 UI test classes and ProductApiTest. It does not include:
 
-### CI configuration drift
+- DatabaseCRUDTest
+- DatabaseDrivenSearchTest
+- DatabaseSmokeTest
+- DatabaseSyncTest
+- UItoDBValidationTest
+- LoginViaAPITest (separate external authentication demo)
 
-- The GitHub Actions workflow is the validated path and has a successful run linked in the README.
-- The Jenkinsfile references `testng-customsuite.xml` and uses a Windows `bat` step. That suite file is not present in the repository tree, so the Jenkinsfile should not be advertised as a working pipeline without correction and a real run.
-- The GitLab pipeline uses a separate Maven/Chrome setup and has not been validated by the GitHub Actions run evidence.
+Therefore, the 93-test CI results do not validate the JDBC or UI-to-database test classes. The workflow currently starts and seeds MySQL, but these database classes are not run by the default Maven suite.
 
-### Browser coverage
+## Database implementation risks
 
-The driver factory contains Chrome and Firefox branches. The recorded successful GitHub Actions run uses Chrome on Ubuntu. Do not claim Firefox or cross-browser execution coverage until those runs are captured.
+### Shared JDBC connection and resource handling
+
+DBUtils stores one static Connection while the TestNG suite runs classes in parallel. The query helpers return ResultSet objects without closing the underlying Statement or PreparedStatement. Update methods also do not consistently close their PreparedStatement.
+
+This creates concurrency and resource-leak risks if multiple database classes are executed together. Some SQL errors are caught and converted into null or -1 return values, which can hide the originating SQL failure.
+
+### Fixture drift
+
+The workflow seed and src/test/resources/init.sql do not contain the same values.
+
+- The workflow seeds Cucumber at 30.00, Brocolli at 60.00 and Beetroot at 40.00.
+- init.sql seeds Brocolli at 120.00, Cauliflower at 60.00, Cucumber at 48.00 and Beetroot at 32.00.
+
+Database tests should use one canonical fixture so local and CI execution do not silently test different baselines.
+
+### Catalog sync category assumption
+
+DatabaseSyncTest currently passes "Vegetable" for every product found on the public UI. The page does not provide verified category data for every product, so this value should not be represented as a scraped or authoritative category.
+
+The test now counts successful and failed upserts separately and fails if a product cannot be synchronized. It writes only to the configured local test database. It does not connect to the GreenKart application's backend or prove that a production catalog is aligned.
+
+### Database-driven search data
+
+DatabaseDrivenSearchTest selects three rows using LIMIT 3 without a deterministic ORDER BY and assumes the returned product names can be searched on the public UI. Once catalog sync has inserted additional names, these rows may no longer be predictable. Use isolated test data and deterministic ordering before including this class in a suite.
+
+## CI configuration and browser coverage
+
+- GitHub Actions is the only pipeline with linked full-suite execution evidence.
+- The Jenkinsfile references testng-customsuite.xml, which is absent from the repository, and uses a Windows bat step. The Jenkins path is not validated.
+- The GitLab CI configuration is present but has no linked successful execution evidence.
+- The linked successful run is Chrome-only. Firefox support in DriverFactory does not establish Firefox coverage.
+- CI logs emit a Selenium warning that no CDP implementation matches browser version 157. The warning did not fail run #21, but browser/CDP compatibility should be reviewed if CDP-specific functionality is added.
 
 ## Next engineering improvements
 
-1. Replace the country dropdown's exact-style XPath with a stable locator and add a focused regression assertion.
-2. Refactor JDBC connection, statement and result-set lifecycle for parallel safety.
-3. Make database-dependent tests fail fast with actionable setup errors when the database is unavailable.
-4. Correct the catalog sync log wording and report inserted/updated/failed row counts accurately.
-5. Align the Jenkinsfile with the actual suite and agent OS, or remove it if Jenkins is not a supported execution path.
-6. Run and capture separate Chrome and Firefox results if cross-browser coverage is a project goal.
+1. Make search synchronization wait for the filtered result state rather than text that may already exist in the original catalogue.
+2. Replace the country dropdown's exact-style XPath with a stable locator.
+3. Refactor DBUtils to use scoped connections and try-with-resources; preserve SQL exceptions rather than returning null or -1.
+4. Align the workflow seed and init.sql, and isolate database test data.
+5. Remove the hard-coded "Vegetable" category from the catalog sync unless category data is actually available.
+6. Create a separate deterministic database suite before adding JDBC tests to the default parallel run.
+7. Correct or remove the Jenkinsfile and validate the GitLab pipeline before listing either as supported CI.

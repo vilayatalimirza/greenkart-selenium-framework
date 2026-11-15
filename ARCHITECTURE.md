@@ -2,63 +2,101 @@
 
 ## High-level structure
 
-```text
-TestNG suite (testng.xml)
-        |
-        +--> Test classes
-        |      +--> UI tests ------> Page objects ------> Selenium WebDriver
-        |      +--> API tests -----> REST Assured ------> External sample API
-        |      +--> DB tests ------> DBUtils/JDBC ------> MySQL test database
-        |
-        +--> TestListener -------> Extent Reports
-        |
-        +--> BaseTest/DriverFactory -> ThreadLocal WebDriver lifecycle
-```
+    GitHub Actions
+          |
+          +--> MySQL 8 service and seed step
+          |
+          +--> Maven Surefire
+                   |
+                   +--> testng.xml (default suite)
+                   |       |
+                   |       +--> 12 UI test classes
+                   |       |       |
+                   |       |       +--> Page objects
+                   |       |                |
+                   |       |                +--> Selenium WebDriver
+                   |       |
+                   |       +--> 1 Reqres API test class
+                   |               |
+                   |               +--> REST Assured --> Reqres sample API
+                   |
+                   +--> Surefire XML/text reports --> CI artifact
 
-## Main components
+The database test classes exist in the repository but are not currently listed in testng.xml. The MySQL service is started and seeded by the workflow, but the default suite does not execute the database test classes. The CI pass counts must therefore not be presented as JDBC test coverage.
 
-### Driver and test lifecycle
+## Default TestNG suite scope
 
-- `DriverFactory` creates Chrome or Firefox drivers based on `browser` in configuration.
-- The driver is stored in a `ThreadLocal<WebDriver>`, allowing separate browser instances for parallel TestNG test threads.
-- `BaseTest` creates the driver and explicit wait before each test method and quits the driver afterward.
-- CI adds headless Chrome flags when the `CI` environment variable is present.
+Maven Surefire is configured to execute testng.xml. The suite currently lists 13 classes and uses parallel class execution with a thread count of four:
 
-### Page objects
+- 12 UI classes that exercise the public GreenKart demo application.
+- ProductApiTest, a legacy-named class that exercises Reqres user endpoints. It does not test a GreenKart backend API.
 
-Page classes under `src/main/java/com/vilayat/pages` encapsulate GreenKart page interactions. Tests should assert business outcomes rather than duplicate low-level locators and browser operations.
+The following classes are present but excluded from the default suite:
 
-### Utilities and reporting
+- DatabaseCRUDTest
+- DatabaseDrivenSearchTest
+- DatabaseSmokeTest
+- DatabaseSyncTest
+- UItoDBValidationTest
+- LoginViaAPITest (separate demo authentication website)
 
-- `ConfigReader` reads the application properties and supports environment overrides for database keys.
-- `WaitUtils` centralizes explicit wait operations.
-- `ScreenshotUtils` captures browser evidence for failed tests.
-- `TestListener` records TestNG pass/fail outcomes in Extent Reports and attaches failure screenshots when a WebDriver is available.
-- `DBUtils` provides JDBC query/update helpers and test-data synchronization functions.
+The 93 executions in the recorded workflow runs belong only to the configured suite.
 
-### API tests
+## WebDriver and test lifecycle
 
-API tests live under `src/test/java/com/vilayat/tests` and use the API base and model classes under `src/test/java/com/vilayat/api`. The current sample tests exercise GET and POST operations, response status/data assertions, response-time checks, POJO mapping and JSON schema validation against an external sample API.
+- DriverFactory creates Chrome or Firefox drivers based on the browser setting.
+- The WebDriver instance is stored in a ThreadLocal, allowing parallel TestNG classes to use separate browser instances.
+- BaseTest creates the driver and explicit wait before each test method and quits the driver afterward.
+- The GitHub Actions workflow sets the CI environment variable, enabling headless Chrome flags.
 
-### Database tests
+Only Chrome is represented by the recorded successful CI run. The Firefox branch in DriverFactory is not proof of validated Firefox coverage.
 
-The database tests use a MySQL database separate from the public GreenKart web application. The GitHub Actions workflow starts a MySQL 8 service, creates `greenkart_db.products`, seeds three product rows, and supplies the JDBC connection settings through environment variables.
+## Page objects
 
-This is a controlled test database used for JDBC and cross-layer test exercises. It is not the database backing the public GreenKart website.
+Classes under src/main/java/com/vilayat/pages encapsulate GreenKart page interactions. Tests should assert business outcomes rather than duplicate low-level locators and browser operations.
 
-## Suite and parallelism
+The country dropdown currently uses an XPath tied to an exact inline style attribute. That locator caused a timeout in historical CI run #17 and remains a maintenance risk.
 
-`testng.xml` defines the suite and runs classes in parallel with a thread count of four. This makes thread-safety of all shared test resources important. In particular, the current `DBUtils` uses one static JDBC connection; this is a known limitation and should be refactored to use scoped connections before relying on concurrent database tests.
+## Utilities and reporting
 
-## CI path
+- ConfigReader reads application properties and supports environment overrides for database keys.
+- WaitUtils centralizes explicit wait operations.
+- ScreenshotUtils captures browser evidence for failed tests.
+- TestListener records TestNG pass/fail outcomes in Extent Reports and attaches failure screenshots when a WebDriver is available.
+- DBUtils provides JDBC query, update and catalog synchronization helpers.
 
-The validated pipeline is `.github/workflows/maven.yml`:
+The listener and report manager are part of the framework, while GitHub Actions uploads Surefire reports as the CI artifact.
+
+## API examples
+
+The default API class uses REST Assured against the external Reqres sample API, with request/response POJOs and JSON schema validation. The REQRES_API_KEY environment variable is required. These tests demonstrate API automation concepts; they do not validate a GreenKart application API or service.
+
+LoginViaAPITest is a separate example that sends an HTTP login request to the-internet.herokuapp.com and injects the returned session cookie into a browser. It is not included in the default suite.
+
+## Database examples and current limitations
+
+The database classes use a MySQL database separate from the public GreenKart application. They are intended as JDBC and cross-layer test exercises.
+
+Important limitations before enabling these classes in a CI suite:
+
+1. DBUtils uses a single static Connection. This is not safe for parallel database classes.
+2. Query/update helpers do not consistently close Statements, PreparedStatements or ResultSets.
+3. Some SQL failures are returned as null or -1 instead of preserving the original exception.
+4. The workflow seed data and src/test/resources/init.sql contain different product values.
+5. DatabaseSyncTest assigns the same "Vegetable" category to every product scraped from the UI, although the UI does not provide verified category data.
+6. DatabaseDrivenSearchTest selects the first three database records without an explicit order or a guarantee that those names exist in the live UI.
+
+The database classes are therefore excluded from the default 93-execution CI metric. A separate deterministic database suite should be established after connection handling, fixtures and test isolation are corrected.
+
+## Validated CI path
+
+The validated pipeline is .github/workflows/maven.yml:
 
 1. Start MySQL 8 as a service container.
 2. Check out the repository.
-3. Set up Temurin JDK 21 (the Maven compiler targets Java 17).
+3. Set up Temurin JDK 21 (Maven compiles against Java 17).
 4. Create and seed the test database.
-5. Run `mvn clean test`.
-6. Upload `target/surefire-reports/` even when tests fail.
+5. Run mvn clean test using testng.xml.
+6. Upload target/surefire-reports even when tests fail.
 
-The GitHub Actions workflow is the only CI path for which this repository currently links a successful full-suite run. The Jenkinsfile and GitLab pipeline are present but require separate validation; do not treat their presence as proof that those pipelines currently run successfully.
+The GitHub Actions workflow is the only CI path with linked full-suite execution evidence. The Jenkinsfile and GitLab configuration require separate correction and validation.
