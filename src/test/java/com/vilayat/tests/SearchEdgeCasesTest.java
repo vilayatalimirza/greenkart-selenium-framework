@@ -80,7 +80,7 @@ public class SearchEdgeCasesTest extends BaseTest {
         Assert.assertTrue(greenKartPage.getVisibleProductNames().size() < fullCount,
             "Search should narrow the list before we clear it");
 
-        greenKartPage.clearSearchBox(); // clear the box
+        greenKartPage.clearSearchBoxAndWaitForProductCount(fullCount); // wait until the full catalogue is restored
         int restoredCount = greenKartPage.getVisibleProductNames().size();
 
         Assert.assertEquals(restoredCount, fullCount, "Clearing search should restore the full product list");

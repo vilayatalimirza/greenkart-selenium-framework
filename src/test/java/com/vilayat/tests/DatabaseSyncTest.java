@@ -5,19 +5,11 @@ import com.vilayat.pages.GreenKartPage;
 import com.vilayat.utils.ConfigReader;
 import com.vilayat.utils.DBUtils;
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.List;
 
 public class DatabaseSyncTest extends BaseTest {
-
-    @BeforeClass
-    public void setupDatabase() {
-        System.out.println("--- Bootstrapping TDM Sync Environment ---");
-        DBUtils.connectToDatabase();
-    }
 
     @Test
     public void synchronizeAllProductsFromUI() {
@@ -36,7 +28,7 @@ public class DatabaseSyncTest extends BaseTest {
         for (String productName : liveProducts) {
             double livePrice = page.getProductPrice(productName);
             
-            boolean isSuccess = DBUtils.upsertProduct(productName, livePrice, "Vegetable");
+            boolean isSuccess = DBUtils.upsertProduct(productName, livePrice, null);
             
             if (isSuccess) {
                 successCount++;
@@ -56,9 +48,4 @@ public class DatabaseSyncTest extends BaseTest {
                 "One or more UI products could not be synchronized to the local test database.");
     }
 
-    @AfterClass
-    public void teardownDatabase() {
-        System.out.println("--- Tearing Down TDM Sync Environment ---");
-        DBUtils.closeConnection();
-    }
 }

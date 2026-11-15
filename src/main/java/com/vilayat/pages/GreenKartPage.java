@@ -32,7 +32,7 @@ public class GreenKartPage {
     private By promoApplyBtn = By.cssSelector("button.promoBtn");
     private By promoInfoText = By.cssSelector("span.promoInfo");
     private By placeOrderBtn = By.xpath("//button[text()='Place Order']");
-    private By countryDropdown = By.xpath("//select[@style='width: 200px;']");
+    private By countryDropdown = By.cssSelector("select");
     private By termsCheckbox = By.cssSelector("input.chkAgree");
     private By proceedFinalBtn = By.cssSelector("button");
     private By searchBox = By.xpath("//input[@type='search']");
@@ -160,24 +160,51 @@ public class GreenKartPage {
     }
     
     public void searchProduct(String productName) {
-    	WaitUtils.waitForVisible(wait, productNames);
-    	WebElement box = driver.findElement(searchBox);
+        WaitUtils.waitForVisible(wait, productNames);
+        List<String> previousResults = getVisibleProductNames();
+
+        WebElement box = driver.findElement(searchBox);
         box.clear();
         box.sendKeys(productName);
-        
-        try {
-            wait.until(ExpectedConditions.textToBePresentInElementLocated(productNames, productName));
-        } catch (Exception e) {
-        	System.err.println("Warning: UI synchronization timeout during search for " + productName);
-        }
+
+        String normalizedQuery = productName.trim().toLowerCase(java.util.Locale.ROOT);
+        wait.until(currentDriver -> {
+            try {
+                String enteredValue = currentDriver.findElement(searchBox).getDomProperty("value");
+                if (!productName.equals(enteredValue)) {
+                    return false;
+                }
+
+                List<WebElement> currentProducts = currentDriver.findElements(productNames);
+                List<String> currentNames = new ArrayList<>();
+                for (WebElement product : currentProducts) {
+                    if (product.isDisplayed()) {
+                        currentNames.add(product.getText().split("-")[0].trim());
+                    }
+                }
+
+                boolean allResultsMatch = currentNames.stream()
+                        .allMatch(name -> name.toLowerCase(java.util.Locale.ROOT).contains(normalizedQuery));
+                boolean originalListAlreadyMatched = previousResults.stream()
+                        .allMatch(name -> name.toLowerCase(java.util.Locale.ROOT).contains(normalizedQuery));
+
+                return allResultsMatch && (!currentNames.equals(previousResults) || originalListAlreadyMatched);
+            } catch (org.openqa.selenium.StaleElementReferenceException e) {
+                return false;
+            }
+        });
     }
-    
+
     public void clearSearchBox() {
-        WebElement box = driver.findElement(searchBox);
-        String currentValue = box.getDomProperty("value");
-        for (int i = 0; i < currentValue.length(); i++) {
-            box.sendKeys(Keys.BACK_SPACE);
-        }
+        driver.findElement(searchBox).clear();
+    }
+
+    public void clearSearchBoxAndWaitForProductCount(int expectedCount) {
+        driver.findElement(searchBox).clear();
+
+        wait.until(currentDriver ->
+                "".equals(currentDriver.findElement(searchBox).getDomProperty("value"))
+                        && currentDriver.findElements(productNames).size() == expectedCount);
     }
 
     public boolean isLogoDisplayed() {

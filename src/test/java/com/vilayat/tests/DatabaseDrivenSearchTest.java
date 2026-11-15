@@ -5,22 +5,14 @@ import com.vilayat.pages.GreenKartPage;
 import com.vilayat.utils.ConfigReader;
 import com.vilayat.utils.DBUtils;
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 public class DatabaseDrivenSearchTest extends BaseTest {
 
-    @BeforeClass
-    public void setupDatabase() {
-        System.out.println("--- Bootstrapping Data-Driven Environment ---");
-        DBUtils.connectToDatabase();
-    }
-
     @DataProvider(name = "dbProductProvider")
     public Object[][] provideProductData() {
-        String query = "SELECT product_name FROM products LIMIT 3;";
+        String query = "SELECT product_name FROM products ORDER BY product_id LIMIT 3;";
         return DBUtils.getProductDataForTesting(query);
     }
 
@@ -40,9 +32,4 @@ public class DatabaseDrivenSearchTest extends BaseTest {
         System.out.println("SUCCESS: Search verified for " + dbProductName);
     }
 
-    @AfterClass
-    public void teardownDatabase() {
-        System.out.println("--- Tearing Down Data-Driven Environment ---");
-        DBUtils.closeConnection();
-    }
 }

@@ -2,43 +2,25 @@ package com.vilayat.tests;
 
 import com.vilayat.utils.DBUtils;
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 
 public class DatabaseSmokeTest {
 
-    @BeforeClass
-    public void setupDatabaseConnection() {
-        DBUtils.connectToDatabase();
-    }
-
     @Test
-    public void verifyProductRetrievalFromDatabase() throws SQLException {
-        // Arrange: Parameterized query for enterprise security
-        String query = "SELECT price, category FROM products WHERE product_name = ?;";
-        String targetProduct = "Brocolli"; 
-        
-        // Act: Execute query using Database Utility
-        ResultSet resultSet = DBUtils.executeParameterizedQuery(query, targetProduct);
-        
-        // Assert: Validate the data integrity
-        Assert.assertNotNull(resultSet, "ResultSet returned null.");
-        Assert.assertTrue(resultSet.next(), "No data found for product: " + targetProduct);
+    public void verifyProductRetrievalFromDatabase() {
+        String query = "SELECT price, category FROM products WHERE product_name = ?";
+        String targetProduct = "Brocolli";
+        List<Map<String, Object>> rows =
+                DBUtils.executeParameterizedQuery(query, targetProduct);
 
-        // Extract data and assert against definitive baseline
-        double actualPrice = resultSet.getDouble("price");
-        String actualCategory = resultSet.getString("category");
+        Assert.assertFalse(rows.isEmpty(), "No data found for product: " + targetProduct);
+        double actualPrice = ((Number) rows.get(0).get("price")).doubleValue();
+        String actualCategory = (String) rows.get(0).get("category");
 
-        Assert.assertEquals(actualPrice, 60.00, "Product price mismatch in DB!"); // Aligned to 60.00
-        Assert.assertEquals(actualCategory, "Vegetable", "Product category mismatch in DB!"); // Aligned to singular 'Vegetable'
-    }
-
-    @AfterClass
-    public void teardownDatabaseConnection() {
-        DBUtils.closeConnection();
+        Assert.assertEquals(actualPrice, 60.00, 0.001, "Product price mismatch in DB.");
+        Assert.assertEquals(actualCategory, "Vegetable", "Product category mismatch in DB.");
     }
 }
