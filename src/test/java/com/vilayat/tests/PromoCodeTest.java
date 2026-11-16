@@ -4,13 +4,9 @@ import com.vilayat.base.BaseTest;
 import com.vilayat.pages.GreenKartPage;
 import com.vilayat.utils.ConfigReader;
 import com.vilayat.utils.TestData;
-import com.vilayat.utils.WaitUtils;
 
-import java.time.Duration;
+import java.math.BigDecimal;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -97,7 +93,10 @@ public class PromoCodeTest extends BaseTest {
         page.waitForDiscountToApply(totalBefore);
         String totalAfter = page.getCheckoutTotalAfterDiscount();
         System.out.println("Total before: " + totalBefore + " | Total after: " + totalAfter);
-        Assert.assertNotEquals(totalAfter, totalBefore, "Discounted total should differ from the original subtotal");
+        Assert.assertTrue(
+                parseAmount(totalAfter).compareTo(parseAmount(totalBefore)) < 0,
+                "Discounted total should be lower than the original subtotal. Before="
+                        + totalBefore + ", after=" + totalAfter);
     }
     // --- TS-PC-014: rapid repeated Apply clicks (exploratory) ---
     @Test
@@ -160,7 +159,18 @@ public class PromoCodeTest extends BaseTest {
         
         String totalAfter= page.getCheckoutTotalAfterDiscount();
         System.out.println("Original: " + totalBefore + " | Discounted: " + totalAfter);
-        Assert.assertNotEquals(totalAfter, totalBefore, "Discounted total should differ from the original subtotal");
+        Assert.assertTrue(
+                parseAmount(totalAfter).compareTo(parseAmount(totalBefore)) < 0,
+                "Discounted total should be lower than the original subtotal. Before="
+                        + totalBefore + ", after=" + totalAfter);
     }
     
+    private BigDecimal parseAmount(String displayedAmount) {
+        String normalized = displayedAmount.replaceAll("[^0-9.]", "");
+        if (normalized.isBlank()) {
+            throw new IllegalArgumentException("Could not parse a displayed amount: " + displayedAmount);
+        }
+        return new BigDecimal(normalized);
+    }
+
 }
