@@ -7,13 +7,11 @@ import java.util.List;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.StaleElementReferenceException;
-import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import com.vilayat.utils.WaitUtils;
 import com.vilayat.exceptions.ProductNotFoundException;
 
-import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.openqa.selenium.Keys;
@@ -23,6 +21,7 @@ import org.openqa.selenium.Keys;
 public class GreenKartPage {
 	private WebDriver driver;
     private WebDriverWait wait;
+    private int unfilteredProductCount = -1;
     
     private By productNames = By.cssSelector("h4.product-name");
     private By addToCartButtons = By.xpath("//div[@class='product-action']/button");
@@ -133,6 +132,7 @@ public class GreenKartPage {
     
     public void waitForPageLoad() {
         WaitUtils.waitForVisible(wait, productNames);
+        unfilteredProductCount = getVisibleProductNames().size();
     }
     
     public void waitForDiscountToApply(String oldTotal) {
@@ -160,16 +160,22 @@ public class GreenKartPage {
     }
     
     public void searchProduct(String productName) {
-        WaitUtils.waitForVisible(wait, productNames);
-        List<String> previousResults = getVisibleProductNames();
+        WaitUtils.waitForVisible(wait, searchBox);
+        if (unfilteredProductCount < 0) {
+            waitForPageLoad();
+        }
 
-        WebElement box = driver.findElement(searchBox);
-        box.clear();
-        box.sendKeys(productName);
+        // The demo filters on keyboard events. Use a real select-all/backspace
+        // interaction rather than relying on WebElement.clear() alone.
+        clearSearchInput();
+        waitForVisibleProductCount(unfilteredProductCount);
 
+        List<String> catalogue = getVisibleProductNames();
         String normalizedQuery = productName.trim().toLowerCase(java.util.Locale.ROOT);
-        boolean matchingProductExpected = previousResults.stream()
+        boolean matchingProductExpected = catalogue.stream()
                 .anyMatch(name -> name.toLowerCase(java.util.Locale.ROOT).contains(normalizedQuery));
+
+        driver.findElement(searchBox).sendKeys(productName);
 
         wait.until(currentDriver -> {
             try {
@@ -188,24 +194,23 @@ public class GreenKartPage {
                 boolean allResultsMatch = currentNames.stream()
                         .allMatch(name -> name.toLowerCase(java.util.Locale.ROOT).contains(normalizedQuery));
 
-                // If the original catalogue contains a match, wait for at least one
-                // matching visible card. Otherwise wait for a genuinely empty result.
                 return allResultsMatch && (matchingProductExpected
                         ? !currentNames.isEmpty()
                         : currentNames.isEmpty());
-            } catch (org.openqa.selenium.StaleElementReferenceException e) {
+            } catch (StaleElementReferenceException e) {
                 return false;
             }
         });
     }
 
-    public void clearSearchBox() {
-        driver.findElement(searchBox).clear();
+    private void clearSearchInput() {
+        WebElement box = driver.findElement(searchBox);
+        box.click();
+        box.sendKeys(Keys.chord(Keys.CONTROL, "a"));
+        box.sendKeys(Keys.BACK_SPACE);
     }
 
-    public void clearSearchBoxAndWaitForProductCount(int expectedCount) {
-        driver.findElement(searchBox).clear();
-
+    private void waitForVisibleProductCount(int expectedCount) {
         wait.until(currentDriver -> {
             if (!"".equals(currentDriver.findElement(searchBox).getDomProperty("value"))) {
                 return false;
@@ -215,6 +220,15 @@ public class GreenKartPage {
                     .count();
             return visibleCount == expectedCount;
         });
+    }
+
+    public void clearSearchBox() {
+        clearSearchInput();
+    }
+
+    public void clearSearchBoxAndWaitForProductCount(int expectedCount) {
+        clearSearchInput();
+        waitForVisibleProductCount(expectedCount);
     }
 
     public boolean isLogoDisplayed() {
@@ -234,33 +248,31 @@ public class GreenKartPage {
     }
     
     public List<String> getVisibleProductNames() {
-    	
-    	List<String> visibleNames = new ArrayList<>();
-        int maxRetries = 3;
-        int attempt = 0;
+        // Wait for cards to exist in the DOM, not become visible. Search results
+        // can validly contain zero visible cards when every card is filtered out.
+        wait.until(currentDriver -> !currentDriver.findElements(productNames).isEmpty());
 
-        while (attempt < maxRetries) {
+        List<String> visibleNames = new ArrayList<>();
+        int maxRetries = 3;
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                WaitUtils.waitForVisible(wait, productNames);
-                List<WebElement> products = driver.findElements(this.productNames);
                 visibleNames.clear();
-                for (WebElement product : products) {
+                for (WebElement product : driver.findElements(productNames)) {
                     if (product.isDisplayed()) {
                         visibleNames.add(product.getText().split("-")[0].trim());
                     }
                 }
-                break; 
-                
+                return visibleNames;
             } catch (StaleElementReferenceException e) {
-                attempt++;
-                System.err.println("DOM refreshed mid-execution. Retrying stale element fetch (Attempt " + attempt + " of " + maxRetries + ")...");
                 if (attempt == maxRetries) {
-                    throw e; // Fail the test if the DOM won't settle after 3 attempts
+                    throw e;
                 }
-            } catch (TimeoutException e) {
-                return visibleNames; // Return empty list if nothing is visible
+                System.err.println("Product list changed during read. Retrying attempt "
+                        + (attempt + 1) + " of " + maxRetries + ".");
             }
         }
+
         return visibleNames;
     }
     

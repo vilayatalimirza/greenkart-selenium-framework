@@ -104,7 +104,7 @@ public final class DBUtils {
      */
     public static boolean upsertProduct(String productName, double price, String category) {
         String selectSql = "SELECT product_id FROM products WHERE product_name = ? ORDER BY product_id LIMIT 1";
-        String updateSql = "UPDATE products SET price = ?, category = ? WHERE product_id = ?";
+        String updateSql = "UPDATE products SET price = ?, category = COALESCE(?, category) WHERE product_id = ?";
         String insertSql = "INSERT INTO products (product_name, price, category) VALUES (?, ?, ?)";
 
         try (Connection connection = openConnection();
@@ -124,7 +124,8 @@ public final class DBUtils {
                     update.setDouble(1, price);
                     update.setString(2, category);
                     update.setInt(3, productId);
-                    return update.executeUpdate() == 1;
+                    update.executeUpdate();
+                    return true;
                 }
             }
 
