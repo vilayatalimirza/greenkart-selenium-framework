@@ -68,7 +68,7 @@ Only Chrome is represented by the linked successful browser/API CI runs. The Fir
 
 \`getVisibleProductNames()\` returns only currently visible product headings. It does not require at least one heading to exist, because a valid no-match query can remove product headings from the DOM. Page-load synchronization is kept separately in \`waitForPageLoad()\`.
 
-This behavior is currently being validated by the latest browser/API workflow run; see the CI run history in the README and [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
+Run #27 passed the no-results search checks. The full suite had one unrelated promo-total failure, now addressed by explicit promo-response and discount-total waits; see [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
 
 ## Country selector
 

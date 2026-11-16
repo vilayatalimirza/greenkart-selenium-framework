@@ -8,6 +8,7 @@ Each row is one execution of the default \`testng.xml\` suite.
 
 | Workflow run | Date (UTC) | Executions | Passed | Failed | Errors | Skipped | First-attempt pass rate |
 |---|---|---:|---:|---:|---:|---:|---:|
+| [#27](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43838482850) | 16 Nov 2026 | 93 | 92 | 1 | 0 | 0 | 98.9% |
 | [#26](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43837521394) | 16 Nov 2026 | 93 | 90 | 3 | 0 | 0 | 96.8% |
 | [#25](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43837208899) | 16 Nov 2026 | 93 | 90 | 3 | 0 | 0 | 96.8% |
 | [#24](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43773126320) | 15 Nov 2026 | 93 | 92 | 1 | 0 | 0 | 98.9% |
@@ -18,28 +19,38 @@ Each row is one execution of the default \`testng.xml\` suite.
 | [#18](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/35330099292) | 18 Sep 2026 | 93 | 93 | 0 | 0 | 0 | 100.0% |
 | [#17](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/35285130645) | 17 Sep 2026 | 93 | 92 | 1 | 0 | 0 | 98.9% |
 
-Run #21 is the latest completed clean browser/API run at 93/93. Runs #25 and #26 each recorded 90/93 after three no-results search checks failed. The latest revision removes the incorrect DOM-presence wait; run #27 is validating that change.
+Run #21 remains the latest clean browser/API run at 93/93. Run #27 passed 92/93 (98.9%). Its three no-results search checks passed; the single failure moved to a promo-total assertion. The latest revision makes promo result handling explicit and is awaiting CI validation.
 
-## Search edge cases
+## Search edge-case history
 
 ### Clear-and-restore behavior
 
 - Run #20: \`SearchEdgeCasesTest.verifyClearingSearchRestoresFullProductList\` failed because the list did not appear to narrow before clearing.
 - Run #22: the same assertion failed again.
-- Runs #23 and #24: the test reached the clear step but timed out while waiting for the full product list to return.
-- Runs #25 and #26: the clear-and-restore test passed after the field reset was changed to select-all/backspace keyboard events.
+- Runs #23 and #24: the test reached the clear step but timed out waiting for the full list to return.
+- Runs #25, #26 and #27: the clear-and-restore test passed after the field reset was changed to select-all/backspace keyboard events.
 
 ### No-results behavior
 
-Runs #25 and #26 failed these three tests:
+Runs #25 and #26 failed these three checks:
 
 - \`verifyNonExistingProductShowsNoResults\`
 - \`verifyNumericSearchShowsNoResults\`
 - \`verifySpecialCharactersDoNotCrashSearch\`
 
-The stack trace pointed to \`getVisibleProductNames()\`. The helper was waiting for at least one product heading to exist. For a no-match query, the demo removes those heading elements from the DOM, so waiting for a heading was the wrong condition.
+The stack trace pointed to \`getVisibleProductNames()\`. The helper waited for at least one product heading to exist, but a no-match query removes those heading elements from the DOM.
 
-The latest revision removes that wait. The helper returns an empty list when no product heading exists, while \`searchProduct()\` retains its own explicit wait for the expected filtered result state. Run #27 is the first full-suite validation of this correction.
+The latest implementation removes that incorrect DOM-presence wait. \`searchProduct()\` retains its explicit wait for the expected visible-result state. All three no-results checks passed in run #27.
+
+## Promo-code total assertion
+
+**Run:** #27  
+**Test:** \`PromoCodeTest.verifyTotalAmountDecreasesAfterValidPromo\`  
+**Observed result:** 92 passed, 1 failed, 0 errors, 0 skipped.
+
+The test reported the original total and discounted total as 200. The page helper \`applyPromoCode()\` waited for the promo message to change for 60 seconds, swallowed the resulting \`TimeoutException\`, and then allowed the test to read the total as if the action had completed. This obscured whether the promo application itself had returned a valid response.
+
+The latest revision adds an overload that waits for an explicit expected promo message, uses a bounded 20-second response wait, and updates the total-change test to wait for the discounted total to change before asserting. It also permits repeated Apply clicks when the already displayed message is a recognized promo result. This correction is awaiting CI validation.
 
 ## Historical country dropdown failure
 
@@ -50,7 +61,7 @@ The test timed out locating the country dropdown with this exact-style XPath:
 
     //select[@style='width: 200px;']
 
-The locator has since been replaced by \`By.cssSelector("select")\`. Runs #25 and #26 completed without a country-dropdown failure. The historical failure remains recorded.
+The locator has since been replaced by \`By.cssSelector("select")\`. Runs #25, #26 and #27 completed without a country-dropdown failure.
 
 ## Database CI execution history
 
@@ -64,7 +75,7 @@ The isolated \`testng-db.xml\` suite runs two database-only tests.
 
 Run #25 exposed fixture drift: \`init.sql\` seeded Brocolli at 120.00 while \`DatabaseSmokeTest\` expected 60.00. The fixture was corrected to Cucumber 30.00, Brocolli 60.00 and Beetroot 40.00. Runs #26 and #27 then passed both database-only tests.
 
-The CRUD test now verifies a null-category upsert preserves the existing category while updating the product price. It uses a unique test product and deletes it in a finally block.
+The CRUD test verifies a null-category upsert preserves the existing category while updating the price. It uses a unique test product and deletes it in a finally block.
 
 ## JDBC implementation
 
@@ -97,10 +108,10 @@ They require isolated fixtures and explicit handling of public-site data changes
 - The Jenkinsfile references \`testng-customsuite.xml\`, which is absent from the repository, and uses a Windows \`bat\` step. The Jenkins path is not validated.
 - The GitLab CI configuration is present but has no linked successful execution evidence.
 - Browser CI evidence is Chrome-only. Firefox support in \`DriverFactory\` does not establish Firefox coverage.
-- CI logs emit a Selenium warning that no CDP implementation matches browser version 157. It has not failed the recorded test jobs; review it if CDP-specific features are introduced.
+- CI logs emit a Selenium warning that no CDP implementation matches browser version 157. It has not failed the recorded database jobs; review it if CDP-specific features are introduced.
 
 ## Next engineering improvements
 
-1. Confirm the no-results helper change with a completed browser/API CI run.
+1. Confirm the promo-response and discounted-total assertions with a completed browser/API CI run.
 2. Add deterministic fixtures before validating the remaining three browser/database integration examples.
 3. Correct or remove the Jenkinsfile and validate the GitLab pipeline before listing either as supported CI.

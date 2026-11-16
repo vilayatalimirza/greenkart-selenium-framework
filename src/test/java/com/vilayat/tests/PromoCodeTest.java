@@ -33,7 +33,7 @@ public class PromoCodeTest extends BaseTest {
         greenKartPage.waitForPageLoad();
         greenKartPage.addItemsToCart(TestData.PRODUCTS_E2E);
         greenKartPage.proceedToCheckout();
-        greenKartPage.applyPromoCode(promoCode);
+        greenKartPage.applyPromoCode(promoCode, expectedMessage);
 
         String actualMessage = greenKartPage.getPromoInfoText();
         Assert.assertEquals(actualMessage, expectedMessage);
@@ -93,7 +93,8 @@ public class PromoCodeTest extends BaseTest {
         page.proceedToCheckout();
         
         String totalBefore = page.getCheckoutTotalBeforeDiscount();
-        page.applyPromoCode(TestData.PROMO_VALID);
+        page.applyPromoCode(TestData.PROMO_VALID, TestData.PROMO_SUCCESS_MSG);
+        page.waitForDiscountToApply(totalBefore);
         String totalAfter = page.getCheckoutTotalAfterDiscount();
         System.out.println("Total before: " + totalBefore + " | Total after: " + totalAfter);
         Assert.assertNotEquals(totalAfter, totalBefore, "Discounted total should differ from the original subtotal");
@@ -153,7 +154,7 @@ public class PromoCodeTest extends BaseTest {
         page.proceedToCheckout();
         String totalBefore = page.getCheckoutTotalBeforeDiscount();
         
-        page.applyPromoCode(TestData.PROMO_VALID);
+        page.applyPromoCode(TestData.PROMO_VALID, TestData.PROMO_SUCCESS_MSG);
         page.waitForPromoCodeApplied();
         page.waitForDiscountToApply(totalBefore);
         

@@ -3,6 +3,7 @@ package com.vilayat.pages;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.time.Duration;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -10,6 +11,7 @@ import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import com.vilayat.utils.WaitUtils;
+import com.vilayat.utils.TestData;
 import com.vilayat.exceptions.ProductNotFoundException;
 
 import org.openqa.selenium.support.ui.Select;
@@ -99,30 +101,45 @@ public class GreenKartPage {
     }
 
     public void applyPromoCode(String promoCode) {
+        applyPromoCode(promoCode, null);
+    }
+
+    /**
+     * Applies a promo code and waits for a known response.
+     * Passing an expected message makes the test assert the specific outcome.
+     * When expectedMessage is null, any recognized promo response is accepted;
+     * this supports exploratory edge cases and repeated Apply clicks.
+     */
+    public void applyPromoCode(String promoCode, String expectedMessage) {
         WaitUtils.waitForVisible(wait, promoCodeInput);
         WebElement input = driver.findElement(promoCodeInput);
-        String currentValue = input.getDomProperty("value");
-        if (currentValue != null) {
-            for (int i = 0; i < currentValue.length(); i++) {
-                input.sendKeys(Keys.BACK_SPACE);
-            }
-        }
-        // Capture old message text (may be empty on first-ever call) before clicking Apply.
-        String oldMessage = "";
-        try {
-            oldMessage = driver.findElement(promoInfoText).getText();
-        } catch (Exception e) {
-            // No message present yet — fine, this is the first attempt.
-        }
+        input.click();
+        input.sendKeys(Keys.chord(Keys.CONTROL, "a"));
+        input.sendKeys(Keys.BACK_SPACE);
         input.sendKeys(promoCode);
+
         WaitUtils.waitForClickable(wait, promoApplyBtn);
         driver.findElement(promoApplyBtn).click();
-        final String finalOldMessage = oldMessage;
-        try {
-            wait.until(d -> !driver.findElement(promoInfoText).getText().equals(finalOldMessage));
-        } catch (org.openqa.selenium.TimeoutException e) {
-            // Message may legitimately stay the same on a repeat apply — not a failure by itself.
-        }
+
+        WebDriverWait promoWait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        promoWait.until(currentDriver -> {
+            try {
+                String actualMessage = currentDriver.findElement(promoInfoText).getText().trim();
+                if (expectedMessage != null) {
+                    return expectedMessage.equals(actualMessage);
+                }
+                return isKnownPromoMessage(actualMessage);
+            } catch (org.openqa.selenium.NoSuchElementException
+                    | StaleElementReferenceException e) {
+                return false;
+            }
+        });
+    }
+
+    private boolean isKnownPromoMessage(String message) {
+        return TestData.PROMO_SUCCESS_MSG.equals(message)
+                || TestData.PROMO_ERROR_MSG.equals(message)
+                || TestData.PROMO_EMPTY_MSG.equals(message);
     }
     
     public void waitForPromoCodeApplied() {

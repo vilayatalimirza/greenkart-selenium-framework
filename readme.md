@@ -14,6 +14,7 @@ This suite runs \`testng.xml\`: 12 UI test classes and one Reqres API test class
 
 | Workflow run | Date (UTC) | Executions | Passed | Failed | Errors | Skipped | First-attempt pass rate |
 |---|---|---:|---:|---:|---:|---:|---:|
+| [#27](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43838482850) | 16 Nov 2026 | 93 | 92 | 1 | 0 | 0 | **98.9%** |
 | [#26](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43837521394) | 16 Nov 2026 | 93 | 90 | 3 | 0 | 0 | **96.8%** |
 | [#25](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43837208899) | 16 Nov 2026 | 93 | 90 | 3 | 0 | 0 | **96.8%** |
 | [#24](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43773126320) | 15 Nov 2026 | 93 | 92 | 1 | 0 | 0 | **98.9%** |
@@ -24,7 +25,7 @@ This suite runs \`testng.xml\`: 12 UI test classes and one Reqres API test class
 | [#18](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/35330099292) | 18 Sep 2026 | 93 | 93 | 0 | 0 | 0 | **100.0%** |
 | [#17](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/35285130645) | 17 Sep 2026 | 93 | 92 | 1 | 0 | 0 | **98.9%** |
 
-Run #25 and #26 both recorded three failures in the no-results search cases: non-existing product, numeric search and special characters. The search helper waited for product headings to exist even when a no-match query removed them from the DOM. The latest revision removes that incorrect wait; run #27 is validating it. See [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
+Runs #25 and #26 recorded three failures in no-results search cases. Run #27 confirms those checks now pass after removing the incorrect DOM-presence wait. Run #27's single failure was `PromoCodeTest.verifyTotalAmountDecreasesAfterValidPromo`: the total remained 200 before and after the promo attempt. The helper previously swallowed a 60-second response timeout; the latest revision waits for an explicit promo result and for the discounted total to change. Run #28/#29 validate the promo-flow correction. See [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
 
 The search clear-and-restore case passed in runs #25 and #26 after the keyboard-based reset change. The country dropdown selector was changed from an exact inline-style XPath to a CSS selector; it did not appear among the failures in those two runs.
 
@@ -40,7 +41,7 @@ The separate \`testng-db.xml\` suite runs two database-only tests: \`DatabaseSmo
 
 Run #25 exposed a fixture mismatch: the database seed had Brocolli at 120.00 while the smoke test expected 60.00. The canonical seed in \`src/test/resources/init.sql\` was corrected, and the database job passed 2/2 in runs #26 and #27. These are small, run-specific samples, not a broad reliability claim.
 
-At the time of this documentation update, run #27's browser/API job is still in progress. The latest completed clean browser/API run remains #21 (93/93); this should not be confused with the database job's 2/2 result.
+Run #27 is the latest completed browser/API run: 92/93 passed (98.9%). It had no search edge-case failures; the single promo-total failure is documented above. Run #27's separate database job also passed 2/2. The latest completed clean browser/API run remains #21 (93/93).
 
 ## What is implemented
 
