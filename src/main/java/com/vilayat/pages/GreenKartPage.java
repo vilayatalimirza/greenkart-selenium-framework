@@ -212,13 +212,17 @@ public class GreenKartPage {
 
     private void waitForVisibleProductCount(int expectedCount) {
         wait.until(currentDriver -> {
-            if (!"".equals(currentDriver.findElement(searchBox).getDomProperty("value"))) {
+            try {
+                if (!"".equals(currentDriver.findElement(searchBox).getDomProperty("value"))) {
+                    return false;
+                }
+                long visibleCount = currentDriver.findElements(productNames).stream()
+                        .filter(WebElement::isDisplayed)
+                        .count();
+                return visibleCount == expectedCount;
+            } catch (StaleElementReferenceException e) {
                 return false;
             }
-            long visibleCount = currentDriver.findElements(productNames).stream()
-                    .filter(WebElement::isDisplayed)
-                    .count();
-            return visibleCount == expectedCount;
         });
     }
 
@@ -248,10 +252,7 @@ public class GreenKartPage {
     }
     
     public List<String> getVisibleProductNames() {
-        // Wait for cards to exist in the DOM, not become visible. Search results
-        // can validly contain zero visible cards when every card is filtered out.
-        wait.until(currentDriver -> !currentDriver.findElements(productNames).isEmpty());
-
+        // No product headings is a valid result after a no-match search.
         List<String> visibleNames = new ArrayList<>();
         int maxRetries = 3;
 

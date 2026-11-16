@@ -22,10 +22,9 @@ public class DatabaseCRUDTest {
             inserted = insertedRows == 1;
             Assert.assertEquals(insertedRows, 1, "Product insertion failed.");
 
-            int updatedRows = DBUtils.executeParameterizedUpdate(
-                    "UPDATE products SET price = ? WHERE product_name = ?",
-                    175.50, productName);
-            Assert.assertEquals(updatedRows, 1, "Product update failed.");
+            Assert.assertTrue(
+                    DBUtils.upsertProduct(productName, 175.50, null),
+                    "Product upsert should report success.");
 
             List<Map<String, Object>> rows = DBUtils.executeParameterizedQuery(
                     "SELECT price, category FROM products WHERE product_name = ?", productName);
@@ -33,7 +32,7 @@ public class DatabaseCRUDTest {
             Assert.assertEquals(((Number) rows.get(0).get("price")).doubleValue(),
                     175.50, 0.001, "Database price mismatch.");
             Assert.assertEquals(rows.get(0).get("category"), "Fruit",
-                    "Updating the price should not change the product category.");
+                    "A null category from the UI sync must preserve the existing category.");
 
         } finally {
             if (inserted) {

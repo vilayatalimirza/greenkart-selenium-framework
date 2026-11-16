@@ -8,8 +8,12 @@ This is a portfolio demonstration built around a public demo website and a separ
 
 The figures below are from individual GitHub Actions runs. They are run-specific results, not a long-term reliability estimate.
 
-| Workflow run | Date (UTC) | Test executions | Passed | Failed | Errors | Skipped | First-attempt pass rate |
+| Workflow run | Date (UTC) | Executions | Passed | Failed | Errors | Skipped | First-attempt pass rate |
 |---|---|---:|---:|---:|---:|---:|---:|
+| [#25](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43837208899) | 16 Nov 2026 | 93 | 90 | 3 | 0 | 0 | **96.8%** |
+| [#24](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43773126320) | 15 Nov 2026 | 93 | 92 | 1 | 0 | 0 | **98.9%** |
+| [#23](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43772949743) | 15 Nov 2026 | 93 | 92 | 1 | 0 | 0 | **98.9%** |
+| [#22](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43771739197) | 15 Nov 2026 | 93 | 92 | 1 | 0 | 0 | **98.9%** |
 | [#21](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43769436492) | 15 Nov 2026 | 93 | 93 | 0 | 0 | 0 | **100.0%** |
 | [#20](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43769427987) | 15 Nov 2026 | 93 | 92 | 1 | 0 | 0 | **98.9%** |
 | [#18](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/35330099292) | 18 Sep 2026 | 93 | 93 | 0 | 0 | 0 | **100.0%** |
@@ -19,7 +23,7 @@ Run #20 failed in SearchEdgeCasesTest.verifyClearingSearchRestoresFullProductLis
 
 Run #17 failed in PlaceOrderTest.verifyCountryDropdownContainsCountries while locating the country dropdown; run #18 passed. The exact-style XPath has since been replaced with a CSS selector for the select element; the new selector requires CI validation.
 
-**Interpretation:** run #21 is the latest recorded clean run at 93/93 (100%). The immediately preceding run was 92/93 (98.9%). Both results are retained here so the successful run does not erase the failure history.
+**Interpretation:** run #21 remains the latest clean browser/API run at 93/93 (100%) among the completed full-suite jobs. Run #25 is the most recent completed browser/API run and recorded 90/93 (96.8%). Run #26 has a successful database job (2/2) while its browser/API job is still being validated. A single run is not a long-term reliability statistic.
 
 ## What is implemented
 
@@ -96,7 +100,7 @@ The CI workflow supplies this value through a GitHub Actions secret. Do not comm
 
 ### Running the database examples
 
-The database test classes are not part of the default testng.xml suite. They require a MySQL 8 database and the following environment variables:
+The isolated database suite runs DatabaseSmokeTest and DatabaseCRUDTest using testng-db.xml. It requires a disposable MySQL 8 database and the following environment variables:
 
     $env:DB_URL = "jdbc:mysql://127.0.0.1:3306/greenkart_db"
     $env:DB_USERNAME = "<your-db-user>"

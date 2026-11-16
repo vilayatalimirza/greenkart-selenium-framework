@@ -20,7 +20,7 @@
                    |
                    +--> Surefire XML/text reports --> CI artifact
 
-The database test classes exist in the repository but are not currently listed in testng.xml. The default workflow does not start MySQL or execute the database test classes. The CI pass counts must therefore not be presented as JDBC test coverage.
+The isolated database CI job uses testng-db.xml and runs DatabaseSmokeTest and DatabaseCRUDTest against a disposable MySQL 8 service initialized from src/test/resources/init.sql. Three browser/database integration classes remain outside this isolated suite.
 
 ## Default TestNG suite scope
 
