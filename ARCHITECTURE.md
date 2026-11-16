@@ -4,94 +4,109 @@
 
     GitHub Actions
           |
-          +--> Maven Surefire
-                   |
-                   +--> testng.xml (default suite)
-                   |       |
-                   |       +--> 12 UI test classes
-                   |       |       |
-                   |       |       +--> Page objects
-                   |       |                |
-                   |       |                +--> Selenium WebDriver
-                   |       |
-                   |       +--> 1 Reqres API test class
-                   |               |
-                   |               +--> REST Assured --> Reqres sample API
-                   |
-                   +--> Surefire XML/text reports --> CI artifact
+          +--> Browser/API job
+          |       |
+          |       +--> Maven Surefire --> testng.xml
+          |               |
+          |               +--> 12 UI test classes
+          |               |       |
+          |               |       +--> Page objects --> Selenium --> GreenKart demo
+          |               |
+          |               +--> 1 API test class
+          |                       |
+          |                       +--> REST Assured --> Reqres sample API
+          |
+          +--> Database job
+                  |
+                  +--> MySQL 8 service + init.sql fixture
+                  |
+                  +--> Maven Surefire --> testng-db.xml
+                          |
+                          +--> DatabaseSmokeTest
+                          +--> DatabaseCRUDTest
 
-The isolated database CI job uses testng-db.xml and runs DatabaseSmokeTest and DatabaseCRUDTest against a disposable MySQL 8 service initialized from src/test/resources/init.sql. Three browser/database integration classes remain outside this isolated suite.
+The two jobs are independent. The browser/API job does not start MySQL. The database job does not launch Chrome or call the public GreenKart website.
 
-## Default TestNG suite scope
+## Browser/API suite scope
 
-Maven Surefire is configured to execute testng.xml. The suite currently lists 13 classes and uses parallel class execution with a thread count of four:
+Maven Surefire defaults to \`testng.xml\`. The suite lists 13 classes and executes UI classes in parallel (four threads):
 
-- 12 UI classes that exercise the public GreenKart demo application.
-- ProductApiTest, a legacy-named class that exercises Reqres user endpoints. It does not test a GreenKart backend API.
+- 12 UI classes exercise the public GreenKart demo.
+- \`ProductApiTest\` exercises Reqres user endpoints through REST Assured. The class name is legacy and does not imply a GreenKart product API.
 
-The following classes are present but excluded from the default suite:
+The recorded full-suite run count is 93 test executions. This figure does not include the database-only job or the three browser/database integration examples outside CI.
 
-- DatabaseCRUDTest
-- DatabaseDrivenSearchTest
-- DatabaseSmokeTest
-- DatabaseSyncTest
-- UItoDBValidationTest
-- LoginViaAPITest (separate demo authentication website)
+## Database suite scope
 
-The 93 executions in the recorded workflow runs belong only to the configured suite.
+The database job uses \`testng-db.xml\`, a serial suite containing:
+
+- \`DatabaseSmokeTest\`: verifies the Brocolli price and category in the disposable test database.
+- \`DatabaseCRUDTest\`: inserts a uniquely named test product, updates it through the upsert helper, verifies price and category preservation, then deletes the test record.
+
+The job starts MySQL 8 and initializes it from \`src/test/resources/init.sql\`. This is a separate test database, not the database backing the public GreenKart application.
+
+The following classes remain outside both CI suites because they combine database work with the live demo site:
+
+- \`DatabaseDrivenSearchTest\`
+- \`DatabaseSyncTest\`
+- \`UItoDBValidationTest\`
+
+\`LoginViaAPITest\` is also outside both suites and targets a separate demo authentication website.
 
 ## WebDriver and test lifecycle
 
-- DriverFactory creates Chrome or Firefox drivers based on the browser setting.
-- The WebDriver instance is stored in a ThreadLocal, allowing parallel TestNG classes to use separate browser instances.
-- BaseTest creates the driver and explicit wait before each test method and quits the driver afterward.
-- The GitHub Actions workflow sets the CI environment variable, enabling headless Chrome flags.
+- \`DriverFactory\` creates Chrome or Firefox drivers based on the browser setting.
+- WebDriver is stored in a \`ThreadLocal\`, allowing parallel TestNG classes to use separate browser instances.
+- \`BaseTest\` creates the driver and explicit wait before each test method and quits the driver afterward.
+- GitHub Actions sets the \`CI\` environment variable, enabling headless Chrome flags.
 
-Only Chrome is represented by the recorded successful CI run. The Firefox branch in DriverFactory is not proof of validated Firefox coverage.
+Only Chrome is represented by the linked successful browser/API CI runs. The Firefox branch in \`DriverFactory\` is not proof of validated Firefox coverage.
 
-## Page objects
+## Search behavior
 
-Classes under src/main/java/com/vilayat/pages encapsulate GreenKart page interactions. Tests should assert business outcomes rather than duplicate low-level locators and browser operations.
+\`GreenKartPage.searchProduct()\` clears the search field using keyboard events, enters the query and waits for the expected visible-result state. The expected state is either one or more matching product cards or an empty result list for a query with no match.
 
-The country dropdown locator was changed from an exact inline-style XPath to a CSS selector for the select element. The new selector needs CI validation; the historical timeout remains in the run history.
+\`getVisibleProductNames()\` returns only currently visible product headings. It does not require at least one heading to exist, because a valid no-match query can remove product headings from the DOM. Page-load synchronization is kept separately in \`waitForPageLoad()\`.
+
+This behavior is currently being validated by the latest browser/API workflow run; see the CI run history in the README and [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
+
+## Country selector
+
+The country dropdown locator was changed from an XPath tied to an exact inline style attribute to a CSS selector for the \`select\` element. The updated selector passed in the latest completed browser/API runs; the historical failure remains in the issue log.
 
 ## Utilities and reporting
 
-- ConfigReader reads application properties and supports environment overrides for database keys.
-- WaitUtils centralizes explicit wait operations.
-- ScreenshotUtils captures browser evidence for failed tests.
-- TestListener records TestNG pass/fail outcomes in Extent Reports and attaches failure screenshots when a WebDriver is available.
-- DBUtils provides JDBC query, update and catalog synchronization helpers.
+- \`ConfigReader\` reads application properties and supports environment overrides for database keys.
+- \`WaitUtils\` centralizes explicit wait operations.
+- \`ScreenshotUtils\` captures browser evidence for failed tests.
+- \`TestListener\` records TestNG pass/fail outcomes in Extent Reports and attaches failure screenshots when a WebDriver is available.
+- \`DBUtils\` provides parameterized JDBC query, update and product upsert helpers.
 
-The listener and report manager are part of the framework, while GitHub Actions uploads Surefire reports as the CI artifact.
+The JDBC helper opens a connection per operation, closes \`Connection\`, \`PreparedStatement\` and \`ResultSet\` resources with try-with-resources, and returns detached row data instead of exposing an open ResultSet. SQL failures are surfaced as an \`IllegalStateException\` with the original \`SQLException\` attached as the cause.
+
+When the public UI does not provide a product category, the upsert helper preserves the existing database category using \`COALESCE\` rather than replacing it with null.
 
 ## API examples
 
-The default API class uses REST Assured against the external Reqres sample API, with request/response POJOs and JSON schema validation. The REQRES_API_KEY environment variable is required. These tests demonstrate API automation concepts; they do not validate a GreenKart application API or service.
+The default API test class uses REST Assured against the external Reqres sample API, with request/response POJOs and JSON schema validation. The \`REQRES_API_KEY\` environment variable is required. These tests demonstrate API automation concepts; they do not validate a GreenKart service.
 
-LoginViaAPITest is a separate example that sends an HTTP login request to the-internet.herokuapp.com and injects the returned session cookie into a browser. It is not included in the default suite.
+## CI workflow
 
-## Database examples and current limitations
+The validated workflow is \`.github/workflows/maven.yml\` and contains two separate jobs.
 
-The database classes use a MySQL database separate from the public GreenKart application. They are intended as JDBC and cross-layer test exercises.
-
-Important limitations before enabling these classes in a CI suite:
-
-1. DBUtils now opens a connection per operation, closes JDBC resources with try-with-resources and returns detached row data rather than live ResultSet objects.
-2. SQL errors are surfaced as IllegalStateException with the original SQLException attached as the cause.
-3. The canonical database seed is src/test/resources/init.sql; the default UI/API workflow does not create a MySQL service.
-4. DatabaseSyncTest leaves category null when the public UI does not expose category data.
-5. DatabaseDrivenSearchTest now orders its selected rows by product_id, but those names are not guaranteed to exist in the live public UI.
-
-The database classes are therefore excluded from the default 93-execution CI metric. A separate deterministic database suite should be established after connection handling, fixtures and test isolation are corrected.
-
-## Validated CI path
-
-The validated pipeline is .github/workflows/maven.yml:
+### Browser/API job
 
 1. Check out the repository.
 2. Set up Temurin JDK 21 (Maven compiles against Java 17).
-3. Run mvn clean test using testng.xml.
-4. Upload target/surefire-reports even when tests fail.
+3. Run \`mvn clean test\` using \`testng.xml\`.
+4. Upload \`target/surefire-reports/\` even when tests fail.
 
-The GitHub Actions workflow is the only CI path with linked full-suite execution evidence. The Jenkinsfile and GitLab configuration require separate correction and validation.
+### Database job
+
+1. Start MySQL 8 as a service container.
+2. Check out the repository and set up Temurin JDK 21.
+3. Initialize the disposable database from \`src/test/resources/init.sql\`.
+4. Run \`mvn -Dtestng.suite=testng-db.xml clean test\`.
+5. Upload database Surefire reports even when tests fail.
+
+The Jenkinsfile and GitLab CI configuration are present but are not validated CI paths.

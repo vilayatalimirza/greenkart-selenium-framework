@@ -1,15 +1,20 @@
 # GreenKart UI, API and Database Test Automation
 
-A Java-based QA automation learning project for the public [GreenKart demo application](https://rahulshettyacademy.com/seleniumPractise/). The repository combines Selenium UI automation, TestNG, REST Assured examples against an external sample API, and JDBC/MySQL exercises.
+A Java QA automation project for the public [GreenKart demo application](https://rahulshettyacademy.com/seleniumPractise/). It combines Selenium UI automation, TestNG, REST Assured examples against the external Reqres sample API, and JDBC/MySQL exercises.
 
-This is a portfolio demonstration built around a public demo website and a separate test database. It is not a production test environment, and the local MySQL database is not the database behind the GreenKart application.
+This is a portfolio project built around a public demo website and a separate test database. It is not a production test environment. The local MySQL database is not the database behind the GreenKart application.
 
-## Latest recorded CI evidence
+## CI evidence
 
-The figures below are from individual GitHub Actions runs. They are run-specific results, not a long-term reliability estimate.
+The browser/API and database suites run in separate GitHub Actions jobs. Their counts must not be combined into one test total.
+
+### Browser and API suite
+
+This suite runs \`testng.xml\`: 12 UI test classes and one Reqres API test class. The following are individual run results, not a long-term reliability guarantee.
 
 | Workflow run | Date (UTC) | Executions | Passed | Failed | Errors | Skipped | First-attempt pass rate |
 |---|---|---:|---:|---:|---:|---:|---:|
+| [#26](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43837521394) | 16 Nov 2026 | 93 | 90 | 3 | 0 | 0 | **96.8%** |
 | [#25](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43837208899) | 16 Nov 2026 | 93 | 90 | 3 | 0 | 0 | **96.8%** |
 | [#24](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43773126320) | 15 Nov 2026 | 93 | 92 | 1 | 0 | 0 | **98.9%** |
 | [#23](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43772949743) | 15 Nov 2026 | 93 | 92 | 1 | 0 | 0 | **98.9%** |
@@ -19,11 +24,23 @@ The figures below are from individual GitHub Actions runs. They are run-specific
 | [#18](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/35330099292) | 18 Sep 2026 | 93 | 93 | 0 | 0 | 0 | **100.0%** |
 | [#17](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/35285130645) | 17 Sep 2026 | 93 | 92 | 1 | 0 | 0 | **98.9%** |
 
-Run #20 failed in SearchEdgeCasesTest.verifyClearingSearchRestoresFullProductList. The test's product-list helper was counting hidden product elements, which could make a filtered list appear unchanged. A visibility-aware helper and result-state wait have since been added; run #23 and later runs will determine whether the issue is resolved. See [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
+Run #25 and #26 both recorded three failures in the no-results search cases: non-existing product, numeric search and special characters. The search helper waited for product headings to exist even when a no-match query removed them from the DOM. The latest revision removes that incorrect wait; run #27 is validating it. See [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
 
-Run #17 failed in PlaceOrderTest.verifyCountryDropdownContainsCountries while locating the country dropdown; run #18 passed. The exact-style XPath has since been replaced with a CSS selector for the select element; the new selector requires CI validation.
+The search clear-and-restore case passed in runs #25 and #26 after the keyboard-based reset change. The country dropdown selector was changed from an exact inline-style XPath to a CSS selector; it did not appear among the failures in those two runs.
 
-**Interpretation:** run #21 remains the latest clean browser/API run at 93/93 (100%) among the completed full-suite jobs. Run #25 is the most recent completed browser/API run and recorded 90/93 (96.8%). Run #26 has a successful database job (2/2) while its browser/API job is still being validated. A single run is not a long-term reliability statistic.
+### Isolated JDBC suite
+
+The separate \`testng-db.xml\` suite runs two database-only tests: \`DatabaseSmokeTest\` and \`DatabaseCRUDTest\`.
+
+| Workflow run | Date (UTC) | Executions | Passed | Failed | First-attempt pass rate |
+|---|---|---:|---:|---:|---:|
+| [#27](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43838482850) | 16 Nov 2026 | 2 | 2 | 0 | **100.0%** |
+| [#26](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43837521394) | 16 Nov 2026 | 2 | 2 | 0 | **100.0%** |
+| [#25](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43837208899) | 16 Nov 2026 | 2 | 1 | 1 | **50.0%** |
+
+Run #25 exposed a fixture mismatch: the database seed had Brocolli at 120.00 while the smoke test expected 60.00. The canonical seed in \`src/test/resources/init.sql\` was corrected, and the database job passed 2/2 in runs #26 and #27. These are small, run-specific samples, not a broad reliability claim.
+
+At the time of this documentation update, run #27's browser/API job is still in progress. The latest completed clean browser/API run remains #21 (93/93); this should not be confused with the database job's 2/2 result.
 
 ## What is implemented
 
@@ -33,34 +50,30 @@ Run #17 failed in PlaceOrderTest.verifyCountryDropdownContainsCountries while lo
 | Framework | Java 17 compiler target, Selenium WebDriver, TestNG, Maven, Page Object Model, ThreadLocal WebDriver, explicit waits |
 | Test support | Configuration reader, test data, screenshots, Log4j2 logging, TestNG listener and Extent Reports |
 | API examples | REST Assured GET/POST examples, response assertions, POJO mapping and JSON schema validation against Reqres |
-| Database exercises | JDBC utilities, parameterized queries, product retrieval, CRUD examples, UI-to-database comparison and catalog upsert example |
-| CI | GitHub Actions workflow with Chrome and Surefire report artifact |
+| JDBC | Parameterized queries and updates, detached result data, operation-scoped connections, CRUD and product upsert examples |
+| CI | Separate GitHub Actions jobs for browser/API and MySQL/JDBC validation |
 
-### What the default CI suite actually runs
+### Test scope
 
-The Maven Surefire configuration points to **testng.xml**. That suite currently lists 13 test classes:
+**Browser/API suite:** \`testng.xml\` contains 13 classes: 12 UI classes against the public GreenKart demo and \`ProductApiTest\`, a legacy-named class that exercises Reqres user endpoints. It does not test a GreenKart backend API.
 
-- **12 UI test classes** covering the GreenKart demo site.
-- **1 API test class**, ProductApiTest, which uses the Reqres sample user API. Despite the legacy class name, it is not a GreenKart product API.
+**Database-only suite:** \`testng-db.xml\` contains \`DatabaseSmokeTest\` and \`DatabaseCRUDTest\`, and runs against a disposable MySQL 8 service initialized from \`src/test/resources/init.sql\`.
 
-The five database test classes (DatabaseCRUDTest, DatabaseDrivenSearchTest, DatabaseSmokeTest, DatabaseSyncTest and UItoDBValidationTest) are present in the source tree but are **not listed in the default suite**. LoginViaAPITest is also outside the default suite and targets a separate demo authentication site.
-
-Therefore, the 93 executions in runs #17, #18, #20 and #21 do **not** represent database test coverage or every test class in the repository. The GitHub Actions workflow validates only the configured UI and Reqres API suite. It does not start MySQL or execute the database classes.
+Three browser/database integration examples remain outside the CI suites because they combine JDBC with the public demo website: \`DatabaseDrivenSearchTest\`, \`DatabaseSyncTest\` and \`UItoDBValidationTest\`. \`LoginViaAPITest\` is also excluded; it targets a separate demo authentication website.
 
 ## Architecture
 
-- **src/main/java/com/vilayat/base**: WebDriver lifecycle and base test setup.
-- **src/main/java/com/vilayat/pages**: Page objects for GreenKart interactions.
-- **src/main/java/com/vilayat/utils**: Configuration, waits, screenshots, test data and JDBC helpers.
-- **src/main/java/com/vilayat/listeners**: TestNG listener and Extent Reports integration.
-- **src/test/java/com/vilayat/tests**: UI, API and database example classes.
-- **src/test/java/com/vilayat/api**: REST Assured base and request/response models.
-- **src/main/resources**: Application and Log4j2 configuration.
-- **testng.xml**: Default suite composition and parallel class execution.
-- **pom.xml**: Dependencies, Java compiler target and Maven Surefire configuration.
-- **.github/workflows/maven.yml**: Validated GitHub Actions pipeline.
+- \`src/main/java/com/vilayat/base\`: WebDriver lifecycle and base test setup.
+- \`src/main/java/com/vilayat/pages\`: page objects for GreenKart interactions.
+- \`src/main/java/com/vilayat/utils\`: configuration, waits, screenshots, test data and JDBC helpers.
+- \`src/main/java/com/vilayat/listeners\`: TestNG listener and Extent Reports integration.
+- \`src/test/java/com/vilayat/tests\`: UI, API and database example classes.
+- \`src/test/java/com/vilayat/api\`: REST Assured base and request/response models.
+- \`testng.xml\`: default browser/API suite.
+- \`testng-db.xml\`: isolated database suite.
+- \`.github/workflows/maven.yml\`: separate UI/API and database CI jobs.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the execution flow and the distinction between default-suite coverage and optional database exercises.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the execution flow.
 
 ## Technology stack
 
@@ -75,57 +88,58 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the execution flow and the distinctio
 | MySQL Connector/J | 8.4.0 |
 | Extent Reports | 5.1.1 |
 | Log4j2 | 2.23.1 |
-| CI runtime | GitHub Actions, Ubuntu, Temurin JDK 21 |
+| CI runtime | GitHub Actions, Ubuntu, Temurin JDK 21; MySQL 8 in the database job |
 
 The CI runtime uses JDK 21 while the Maven compiler targets Java 17.
 
-## Run the default suite locally
+## Run locally
 
-### Prerequisites
+### Browser/API suite
 
-- JDK 17 or newer
-- Maven 3.9+
-- Google Chrome
-- Network access to the public GreenKart demo and Reqres API
-- A Reqres API key, exposed as the REQRES_API_KEY environment variable
+Prerequisites: JDK 17 or newer, Maven 3.9+, Chrome, network access to GreenKart and Reqres, and a Reqres API key.
 
-### PowerShell
+PowerShell:
 
     git clone https://github.com/vilayatalimirza/greenkart-selenium-framework.git
     cd greenkart-selenium-framework
     $env:REQRES_API_KEY = "<your-Reqres-API-key>"
     mvn clean test
 
-The CI workflow supplies this value through a GitHub Actions secret. Do not commit API keys or passwords to the repository.
+### Database suite
 
-### Running the database examples
-
-The isolated database suite runs DatabaseSmokeTest and DatabaseCRUDTest using testng-db.xml. It requires a disposable MySQL 8 database and the following environment variables:
+Start a disposable MySQL 8 database and configure:
 
     $env:DB_URL = "jdbc:mysql://127.0.0.1:3306/greenkart_db"
     $env:DB_USERNAME = "<your-db-user>"
     $env:DB_PASSWORD = "<your-db-password>"
 
-The database examples should be run and validated separately against the disposable fixture. They are not part of the default CI run. Their results are not included in the CI figures above.
+Initialize the schema and seed data:
+
+    mysql -h 127.0.0.1 -u<your-db-user> -p greenkart_db < src/test/resources/init.sql
+
+Run the isolated suite:
+
+    mvn -Dtestng.suite=testng-db.xml clean test
+
+The database suite is serial and only includes the database-only smoke and CRUD tests. The three browser/database integration examples are not part of this command.
 
 ## Reports and test documentation
 
-- Surefire XML and text reports: target/surefire-reports/
-- CI run summary and downloadable Surefire artifact: [latest successful run #21](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43769436492)
+- Browser/API Surefire XML and text reports: \`target/surefire-reports/\`
+- Database Surefire reports: \`target/surefire-reports/\` from the database CI job
+- Workflow runs and downloadable artifacts: [GitHub Actions](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions)
 - Manual test documentation workbook: [GreenKart_TestingDOC_Enhanced.xlsx](GreenKart_TestingDOC_Enhanced.xlsx)
 
-The workbook is manual test documentation and is separate from the automated execution report.
+The workbook is manual test documentation and is separate from automated execution reports.
 
 ## Known limitations
 
 - The public GreenKart demo and Reqres API are external dependencies whose availability and data can change.
-- Only Chrome is covered by the linked successful CI run. The driver factory contains a Firefox branch, but no successful Firefox CI run is documented.
-- The five database test classes are not included in the default TestNG suite. The default workflow does not start MySQL and should not be mistaken for database test coverage.
-- DBUtils now opens a connection per operation, closes JDBC resources with try-with-resources, returns detached row data and preserves SQL exceptions as causes.
-- The database fixture is provided in src/test/resources/init.sql for a separately configured disposable MySQL test database. See KNOWN-ISSUES.md before running the database exercises.
-- DatabaseSyncTest assigns the category "Vegetable" to every scraped product; the public UI does not provide verified category data for each product.
-- The Jenkinsfile and GitLab pipeline are present but are not validated CI paths. The Jenkinsfile references a suite file that is absent from the repository and uses a Windows batch step.
-- The country dropdown locator and one search edge-case test have observed failure history. See KNOWN-ISSUES.md.
+- Only Chrome is covered by the linked CI runs. Firefox support exists in \`DriverFactory\`, but no successful Firefox CI run is documented.
+- Three browser/database integration examples remain outside CI and depend on both local MySQL data and the live public demo site.
+- The JDBC helper is resource-scoped, but the separate database suite currently validates only two database-only scenarios.
+- The Jenkinsfile references a suite file that is absent from the repository and uses a Windows batch step. The Jenkins path is not validated.
+- The GitLab CI configuration is present but has no linked successful execution evidence.
 
 ## Author
 

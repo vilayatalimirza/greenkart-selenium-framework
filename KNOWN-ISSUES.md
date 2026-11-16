@@ -1,11 +1,14 @@
 # Known issues and validation notes
 
-This file retains observed failures and implementation risks. A later passing run does not erase a previous failure.
+This file records observed failures, fixes and remaining limitations. A later passing run does not erase an earlier failure.
 
-## CI execution history
+## Browser/API CI execution history
+
+Each row is one execution of the default \`testng.xml\` suite.
 
 | Workflow run | Date (UTC) | Executions | Passed | Failed | Errors | Skipped | First-attempt pass rate |
 |---|---|---:|---:|---:|---:|---:|---:|
+| [#26](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43837521394) | 16 Nov 2026 | 93 | 90 | 3 | 0 | 0 | 96.8% |
 | [#25](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43837208899) | 16 Nov 2026 | 93 | 90 | 3 | 0 | 0 | 96.8% |
 | [#24](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43773126320) | 15 Nov 2026 | 93 | 92 | 1 | 0 | 0 | 98.9% |
 | [#23](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43772949743) | 15 Nov 2026 | 93 | 92 | 1 | 0 | 0 | 98.9% |
@@ -15,76 +18,89 @@ This file retains observed failures and implementation risks. A later passing ru
 | [#18](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/35330099292) | 18 Sep 2026 | 93 | 93 | 0 | 0 | 0 | 100.0% |
 | [#17](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/35285130645) | 17 Sep 2026 | 93 | 92 | 1 | 0 | 0 | 98.9% |
 
-These are separate, individual runs of the default TestNG suite. Run #21 is the latest clean run, not a long-term reliability statistic. Each run covers 13 classes from testng.xml (12 UI classes and one Reqres API class); the database test classes are excluded.
+Run #21 is the latest completed clean browser/API run at 93/93. Runs #25 and #26 each recorded 90/93 after three no-results search checks failed. The latest revision removes the incorrect DOM-presence wait; run #27 is validating that change.
 
-## Observed failure: search edge-case test
+## Search edge cases
 
-**Run:** #20  
-**Test:** SearchEdgeCasesTest.verifyClearingSearchRestoresFullProductList  
-**Observed result:** 92 passed, 1 failed, 0 errors, 0 skipped.
+### Clear-and-restore behavior
 
-The assertion failed before the clear operation because the test expected the partial search to reduce the visible product list, but the observed count was not smaller than the original list.
+- Run #20: \`SearchEdgeCasesTest.verifyClearingSearchRestoresFullProductList\` failed because the list did not appear to narrow before clearing.
+- Run #22: the same assertion failed again.
+- Runs #23 and #24: the test reached the clear step but timed out while waiting for the full product list to return.
+- Runs #25 and #26: the clear-and-restore test passed after the field reset was changed to select-all/backspace keyboard events.
 
-Run #21 passed all 93 executions. Run #21 passed, but did not prove the issue fixed. A subsequent run #22 failed the same test. Code review found getVisibleProductNames() counted hidden product elements, so it did not reliably represent visible results. The helper now filters by isDisplayed(), and the search wait now distinguishes expected matching results from a true zero-result query. Run #23 and later runs will validate this change.
+### No-results behavior
 
-The helper now waits for the search input to contain the query and for the visible result state to match the expected outcome. For queries that should match an original product, at least one visible match is required; for unmatched queries, an empty visible list is expected. The search wait no longer swallows synchronization timeouts. The clear-search path waits for the original visible catalogue count. These changes are pending CI validation.
+Runs #25 and #26 failed these three tests:
 
-## Historical failure: country dropdown locator
+- \`verifyNonExistingProductShowsNoResults\`
+- \`verifyNumericSearchShowsNoResults\`
+- \`verifySpecialCharactersDoNotCrashSearch\`
+
+The stack trace pointed to \`getVisibleProductNames()\`. The helper was waiting for at least one product heading to exist. For a no-match query, the demo removes those heading elements from the DOM, so waiting for a heading was the wrong condition.
+
+The latest revision removes that wait. The helper returns an empty list when no product heading exists, while \`searchProduct()\` retains its own explicit wait for the expected filtered result state. Run #27 is the first full-suite validation of this correction.
+
+## Historical country dropdown failure
 
 **Run:** #17  
-**Test:** PlaceOrderTest.verifyCountryDropdownContainsCountries
+**Test:** \`PlaceOrderTest.verifyCountryDropdownContainsCountries\`
 
 The test timed out locating the country dropdown with this exact-style XPath:
 
     //select[@style='width: 200px;']
 
-Run #18 passed, but the same locator is still present in GreenKartPage. The later pass does not remove the locator risk. Prefer a stable id, name, label or scoped selector after checking the live DOM.
+The locator has since been replaced by \`By.cssSelector("select")\`. Runs #25 and #26 completed without a country-dropdown failure. The historical failure remains recorded.
 
-## Default suite scope: database tests are not executed
+## Database CI execution history
 
-The default testng.xml suite includes 12 UI test classes and ProductApiTest. It does not include:
+The isolated \`testng-db.xml\` suite runs two database-only tests.
 
-- DatabaseCRUDTest
-- DatabaseDrivenSearchTest
-- DatabaseSmokeTest
-- DatabaseSyncTest
-- UItoDBValidationTest
-- LoginViaAPITest (separate external authentication demo)
+| Workflow run | Date (UTC) | Executions | Passed | Failed | Result |
+|---|---|---:|---:|---:|---|
+| [#27](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43838482850) | 16 Nov 2026 | 2 | 2 | 0 | Passed |
+| [#26](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43837521394) | 16 Nov 2026 | 2 | 2 | 0 | Passed |
+| [#25](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43837208899) | 16 Nov 2026 | 2 | 1 | 1 | Failed |
 
-Therefore, the 93-test CI results do not validate the JDBC or UI-to-database test classes. The default workflow does not start MySQL, and these database classes are not run by the default Maven suite.
+Run #25 exposed fixture drift: \`init.sql\` seeded Brocolli at 120.00 while \`DatabaseSmokeTest\` expected 60.00. The fixture was corrected to Cucumber 30.00, Brocolli 60.00 and Beetroot 40.00. Runs #26 and #27 then passed both database-only tests.
 
-## Database implementation risks
+The CRUD test now verifies a null-category upsert preserves the existing category while updating the product price. It uses a unique test product and deletes it in a finally block.
 
-### Shared JDBC connection and resource handling
+## JDBC implementation
 
-DBUtils stores one static Connection while the TestNG suite runs classes in parallel. The query helpers return ResultSet objects without closing the underlying Statement or PreparedStatement. Update methods also do not consistently close their PreparedStatement.
+The previous \`DBUtils\` implementation used one static shared connection, returned live ResultSet objects and did not consistently close statements. It also converted some SQL failures to null or -1 return values.
 
-This creates concurrency and resource-leak risks if multiple database classes are executed together. Some SQL errors are caught and converted into null or -1 return values, which can hide the originating SQL failure.
+The current implementation:
 
-### Fixture drift
+- Opens one connection per operation.
+- Closes connections, prepared statements and result sets with try-with-resources.
+- Returns detached row data instead of a live ResultSet.
+- Surfaces SQL failures as an \`IllegalStateException\` with the original SQLException attached.
+- Preserves an existing product category when a catalog upsert receives a null category.
 
-src/test/resources/init.sql is now the canonical disposable test-database seed. It contains Cucumber at 30.00, Brocolli at 60.00 and Beetroot at 40.00, matching DatabaseSmokeTest. The default workflow no longer creates a MySQL service. The DB suite requires a separately configured MySQL instance.
+The database CI job currently covers only \`DatabaseSmokeTest\` and \`DatabaseCRUDTest\`. It does not claim validation for every JDBC example in the repository.
 
-### Catalog sync category assumption
+## Database examples outside CI
 
-DatabaseSyncTest now passes a null category for products discovered through the public UI because the page does not provide verified category data.
+These browser/database integration examples remain outside the CI suites:
 
-The test now counts successful and failed upserts separately and fails if a product cannot be synchronized. It writes only to the configured local test database. It does not connect to the GreenKart application's backend or prove that a production catalog is aligned.
+- \`DatabaseDrivenSearchTest\`: depends on database-provided product names also existing in the live demo catalog.
+- \`DatabaseSyncTest\`: scrapes the live demo and writes product data to the separate local test database.
+- \`UItoDBValidationTest\`: compares a live demo price to a separately maintained local database value.
 
-### Database-driven search data
-
-DatabaseDrivenSearchTest selects three rows using LIMIT 3 without a deterministic ORDER BY and assumes the returned product names can be searched on the public UI. Once catalog sync has inserted additional names, these rows may no longer be predictable. Use isolated test data and deterministic ordering before including this class in a suite.
+They require isolated fixtures and explicit handling of public-site data changes before being suitable for repeatable CI.
 
 ## CI configuration and browser coverage
 
-- GitHub Actions is the only pipeline with linked full-suite execution evidence.
-- The Jenkinsfile references testng-customsuite.xml, which is absent from the repository, and uses a Windows bat step. The Jenkins path is not validated.
+- The browser/API and database suites are separate jobs in \`.github/workflows/maven.yml\`.
+- GitHub Actions is the only pipeline with linked execution evidence.
+- The Jenkinsfile references \`testng-customsuite.xml\`, which is absent from the repository, and uses a Windows \`bat\` step. The Jenkins path is not validated.
 - The GitLab CI configuration is present but has no linked successful execution evidence.
-- The linked successful run is Chrome-only. Firefox support in DriverFactory does not establish Firefox coverage.
-- CI logs emit a Selenium warning that no CDP implementation matches browser version 157. The warning did not fail run #21, but browser/CDP compatibility should be reviewed if CDP-specific functionality is added.
+- Browser CI evidence is Chrome-only. Firefox support in \`DriverFactory\` does not establish Firefox coverage.
+- CI logs emit a Selenium warning that no CDP implementation matches browser version 157. It has not failed the recorded test jobs; review it if CDP-specific features are introduced.
 
 ## Next engineering improvements
 
-1. Add a deterministic database-test workflow after validating the five excluded database classes against the disposable fixture.
-2. Review remaining live-site assumptions in UItoDBValidationTest and DatabaseDrivenSearchTest.
+1. Confirm the no-results helper change with a completed browser/API CI run.
+2. Add deterministic fixtures before validating the remaining three browser/database integration examples.
 3. Correct or remove the Jenkinsfile and validate the GitLab pipeline before listing either as supported CI.
