@@ -19,8 +19,8 @@ public class DatabaseCRUDTest {
             int insertedRows = DBUtils.executeParameterizedUpdate(
                     "INSERT INTO products (product_name, price, category) VALUES (?, ?, ?)",
                     productName, 150.00, "Fruit");
+            inserted = insertedRows == 1;
             Assert.assertEquals(insertedRows, 1, "Product insertion failed.");
-            inserted = true;
 
             int updatedRows = DBUtils.executeParameterizedUpdate(
                     "UPDATE products SET price = ? WHERE product_name = ?",
