@@ -7,6 +7,10 @@
   <artifactId>greenkart-framework</artifactId>
   <version>1.0.0</version>
 
+  <properties>
+    <testng.suite>testng.xml</testng.suite>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.seleniumhq.selenium</groupId>
@@ -83,7 +87,7 @@
         <version>3.2.5</version>
         <configuration>
           <suiteXmlFiles>
-            <suiteXmlFile>testng.xml</suiteXmlFile>
+            <suiteXmlFile>${testng.suite}</suiteXmlFile>
           </suiteXmlFiles>
         </configuration>
       </plugin>

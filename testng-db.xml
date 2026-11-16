@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.1.dtd">
+<suite name="GreenKart Database Test Suite">
+    <listeners>
+        <listener class-name="com.vilayat.listeners.TestListener"/>
+    </listeners>
+    <test name="JDBC Database Tests">
+        <classes>
+            <class name="com.vilayat.tests.DatabaseSmokeTest"/>
+            <class name="com.vilayat.tests.DatabaseCRUDTest"/>
+        </classes>
+    </test>
+</suite>

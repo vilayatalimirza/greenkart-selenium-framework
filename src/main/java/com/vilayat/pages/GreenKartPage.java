@@ -3,17 +3,17 @@ package com.vilayat.pages;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.time.Duration;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.StaleElementReferenceException;
-import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import com.vilayat.utils.WaitUtils;
+import com.vilayat.utils.TestData;
 import com.vilayat.exceptions.ProductNotFoundException;
 
-import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.openqa.selenium.Keys;
@@ -23,6 +23,7 @@ import org.openqa.selenium.Keys;
 public class GreenKartPage {
 	private WebDriver driver;
     private WebDriverWait wait;
+    private int unfilteredProductCount = -1;
     
     private By productNames = By.cssSelector("h4.product-name");
     private By addToCartButtons = By.xpath("//div[@class='product-action']/button");
@@ -32,7 +33,7 @@ public class GreenKartPage {
     private By promoApplyBtn = By.cssSelector("button.promoBtn");
     private By promoInfoText = By.cssSelector("span.promoInfo");
     private By placeOrderBtn = By.xpath("//button[text()='Place Order']");
-    private By countryDropdown = By.xpath("//select[@style='width: 200px;']");
+    private By countryDropdown = By.cssSelector("select");
     private By termsCheckbox = By.cssSelector("input.chkAgree");
     private By proceedFinalBtn = By.cssSelector("button");
     private By searchBox = By.xpath("//input[@type='search']");
@@ -100,30 +101,45 @@ public class GreenKartPage {
     }
 
     public void applyPromoCode(String promoCode) {
+        applyPromoCode(promoCode, null);
+    }
+
+    /**
+     * Applies a promo code and waits for a known response.
+     * Passing an expected message makes the test assert the specific outcome.
+     * When expectedMessage is null, any recognized promo response is accepted;
+     * this supports exploratory edge cases and repeated Apply clicks.
+     */
+    public void applyPromoCode(String promoCode, String expectedMessage) {
         WaitUtils.waitForVisible(wait, promoCodeInput);
         WebElement input = driver.findElement(promoCodeInput);
-        String currentValue = input.getDomProperty("value");
-        if (currentValue != null) {
-            for (int i = 0; i < currentValue.length(); i++) {
-                input.sendKeys(Keys.BACK_SPACE);
-            }
-        }
-        // Capture old message text (may be empty on first-ever call) before clicking Apply.
-        String oldMessage = "";
-        try {
-            oldMessage = driver.findElement(promoInfoText).getText();
-        } catch (Exception e) {
-            // No message present yet — fine, this is the first attempt.
-        }
+        input.click();
+        input.sendKeys(Keys.chord(Keys.CONTROL, "a"));
+        input.sendKeys(Keys.BACK_SPACE);
         input.sendKeys(promoCode);
+
         WaitUtils.waitForClickable(wait, promoApplyBtn);
         driver.findElement(promoApplyBtn).click();
-        final String finalOldMessage = oldMessage;
-        try {
-            wait.until(d -> !driver.findElement(promoInfoText).getText().equals(finalOldMessage));
-        } catch (org.openqa.selenium.TimeoutException e) {
-            // Message may legitimately stay the same on a repeat apply — not a failure by itself.
-        }
+
+        WebDriverWait promoWait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        promoWait.until(currentDriver -> {
+            try {
+                String actualMessage = currentDriver.findElement(promoInfoText).getText().trim();
+                if (expectedMessage != null) {
+                    return expectedMessage.equals(actualMessage);
+                }
+                return isKnownPromoMessage(actualMessage);
+            } catch (org.openqa.selenium.NoSuchElementException
+                    | StaleElementReferenceException e) {
+                return false;
+            }
+        });
+    }
+
+    private boolean isKnownPromoMessage(String message) {
+        return TestData.PROMO_SUCCESS_MSG.equals(message)
+                || TestData.PROMO_ERROR_MSG.equals(message)
+                || TestData.PROMO_EMPTY_MSG.equals(message);
     }
     
     public void waitForPromoCodeApplied() {
@@ -133,6 +149,7 @@ public class GreenKartPage {
     
     public void waitForPageLoad() {
         WaitUtils.waitForVisible(wait, productNames);
+        unfilteredProductCount = getVisibleProductNames().size();
     }
     
     public void waitForDiscountToApply(String oldTotal) {
@@ -160,24 +177,79 @@ public class GreenKartPage {
     }
     
     public void searchProduct(String productName) {
-    	WaitUtils.waitForVisible(wait, productNames);
-    	WebElement box = driver.findElement(searchBox);
-        box.clear();
-        box.sendKeys(productName);
-        
-        try {
-            wait.until(ExpectedConditions.textToBePresentInElementLocated(productNames, productName));
-        } catch (Exception e) {
-        	System.err.println("Warning: UI synchronization timeout during search for " + productName);
+        WaitUtils.waitForVisible(wait, searchBox);
+        if (unfilteredProductCount < 0) {
+            waitForPageLoad();
         }
+
+        // The demo filters on keyboard events. Use a real select-all/backspace
+        // interaction rather than relying on WebElement.clear() alone.
+        clearSearchInput();
+        waitForVisibleProductCount(unfilteredProductCount);
+
+        List<String> catalogue = getVisibleProductNames();
+        String normalizedQuery = productName.trim().toLowerCase(java.util.Locale.ROOT);
+        boolean matchingProductExpected = catalogue.stream()
+                .anyMatch(name -> name.toLowerCase(java.util.Locale.ROOT).contains(normalizedQuery));
+
+        driver.findElement(searchBox).sendKeys(productName);
+
+        wait.until(currentDriver -> {
+            try {
+                String enteredValue = currentDriver.findElement(searchBox).getDomProperty("value");
+                if (!productName.equals(enteredValue)) {
+                    return false;
+                }
+
+                List<String> currentNames = new ArrayList<>();
+                for (WebElement product : currentDriver.findElements(productNames)) {
+                    if (product.isDisplayed()) {
+                        currentNames.add(product.getText().split("-")[0].trim());
+                    }
+                }
+
+                boolean allResultsMatch = currentNames.stream()
+                        .allMatch(name -> name.toLowerCase(java.util.Locale.ROOT).contains(normalizedQuery));
+
+                return allResultsMatch && (matchingProductExpected
+                        ? !currentNames.isEmpty()
+                        : currentNames.isEmpty());
+            } catch (StaleElementReferenceException e) {
+                return false;
+            }
+        });
     }
-    
-    public void clearSearchBox() {
+
+    private void clearSearchInput() {
         WebElement box = driver.findElement(searchBox);
-        String currentValue = box.getDomProperty("value");
-        for (int i = 0; i < currentValue.length(); i++) {
-            box.sendKeys(Keys.BACK_SPACE);
-        }
+        box.click();
+        box.sendKeys(Keys.chord(Keys.CONTROL, "a"));
+        box.sendKeys(Keys.BACK_SPACE);
+    }
+
+    private void waitForVisibleProductCount(int expectedCount) {
+        wait.until(currentDriver -> {
+            try {
+                if (!"".equals(currentDriver.findElement(searchBox).getDomProperty("value"))) {
+                    return false;
+                }
+                long visibleCount = currentDriver.findElements(productNames).stream()
+                        .filter(WebElement::isDisplayed)
+                        .count();
+                return visibleCount == expectedCount;
+            } catch (StaleElementReferenceException e) {
+                return false;
+            }
+        });
+    }
+
+    public void clearSearchBox() {
+        clearSearchInput();
+    }
+
+    public void clearSearchBoxAndWaitForProductCount(int expectedCount) {
+        clearSearchInput();
+        waitForVisibleProductCount(expectedCount);
     }
 
     public boolean isLogoDisplayed() {
@@ -197,31 +269,28 @@ public class GreenKartPage {
     }
     
     public List<String> getVisibleProductNames() {
-    	
-    	List<String> visibleNames = new ArrayList<>();
+        // No product headings is a valid result after a no-match search.
+        List<String> visibleNames = new ArrayList<>();
         int maxRetries = 3;
-        int attempt = 0;
 
-        while (attempt < maxRetries) {
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                WaitUtils.waitForVisible(wait, productNames);
-                List<WebElement> products = driver.findElements(this.productNames);
                 visibleNames.clear();
-                for (int i = 0; i < products.size(); i++) {
-                    visibleNames.add(products.get(i).getText().split("-")[0].trim());
+                for (WebElement product : driver.findElements(productNames)) {
+                    if (product.isDisplayed()) {
+                        visibleNames.add(product.getText().split("-")[0].trim());
+                    }
                 }
-                break; 
-                
+                return visibleNames;
             } catch (StaleElementReferenceException e) {
-                attempt++;
-                System.err.println("DOM refreshed mid-execution. Retrying stale element fetch (Attempt " + attempt + " of " + maxRetries + ")...");
                 if (attempt == maxRetries) {
-                    throw e; // Fail the test if the DOM won't settle after 3 attempts
+                    throw e;
                 }
-            } catch (TimeoutException e) {
-                return visibleNames; // Return empty list if nothing is visible
+                System.err.println("Product list changed during read. Retrying attempt "
+                        + (attempt + 1) + " of " + maxRetries + ".");
             }
         }
+
         return visibleNames;
     }
     

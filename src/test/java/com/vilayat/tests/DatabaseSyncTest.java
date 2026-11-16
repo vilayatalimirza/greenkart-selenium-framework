@@ -4,19 +4,12 @@ import com.vilayat.base.BaseTest;
 import com.vilayat.pages.GreenKartPage;
 import com.vilayat.utils.ConfigReader;
 import com.vilayat.utils.DBUtils;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.List;
 
 public class DatabaseSyncTest extends BaseTest {
-
-    @BeforeClass
-    public void setupDatabase() {
-        System.out.println("--- Bootstrapping TDM Sync Environment ---");
-        DBUtils.connectToDatabase();
-    }
 
     @Test
     public void synchronizeAllProductsFromUI() {
@@ -30,27 +23,29 @@ public class DatabaseSyncTest extends BaseTest {
         System.out.println("Found " + liveProducts.size() + " products on the UI. Initiating Upsert...");
 
         int successCount = 0;
+        int failureCount = 0;
 
         for (String productName : liveProducts) {
             double livePrice = page.getProductPrice(productName);
             
-            boolean isSuccess = DBUtils.upsertProduct(productName, livePrice, "Vegetable");
+            boolean isSuccess = DBUtils.upsertProduct(productName, livePrice, null);
             
             if (isSuccess) {
                 successCount++;
+            } else {
+                failureCount++;
             }
         }
 
         System.out.println("==================================================");
         System.out.println("TDM Sync Complete!");
-        System.out.println("Successfully upserted " + successCount + " out of " + liveProducts.size() + " products.");
-        System.out.println("Your local database is now 100% aligned with Production.");
+        System.out.println("Successfully synchronized: " + successCount);
+        System.out.println("Failed to synchronize: " + failureCount);
+        System.out.println("Target: configured local test database (not the GreenKart application's backend).");
         System.out.println("==================================================");
+
+        Assert.assertEquals(successCount, liveProducts.size(),
+                "One or more UI products could not be synchronized to the local test database.");
     }
 
-    @AfterClass
-    public void teardownDatabase() {
-        System.out.println("--- Tearing Down TDM Sync Environment ---");
-        DBUtils.closeConnection();
-    }
 }

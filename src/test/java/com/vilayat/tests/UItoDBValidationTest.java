@@ -5,50 +5,29 @@ import com.vilayat.pages.GreenKartPage;
 import com.vilayat.utils.ConfigReader;
 import com.vilayat.utils.DBUtils;
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 
 public class UItoDBValidationTest extends BaseTest {
-	
-	 private GreenKartPage page;
-
-    @BeforeClass
-    public void setupDatabase() {
-        System.out.println("--- Bootstrapping Cross-Layer DB Environment ---");
-        DBUtils.connectToDatabase();
-    }
 
     @Test
-    public void verifyUIPriceMatchesDatabaseTruth() throws SQLException {
-    	driver.get(ConfigReader.getBaseUrl());
-        page = new GreenKartPage(driver, wait);
+    public void verifyUIPriceMatchesDatabaseTruth() {
+        driver.get(ConfigReader.getBaseUrl());
+        GreenKartPage page = new GreenKartPage(driver, wait);
         page.waitForPageLoad();
+
         String targetProduct = "Brocolli";
-        
-        String query = "SELECT price FROM products WHERE product_name = ?;";
-        ResultSet rs = DBUtils.executeParameterizedQuery(query, targetProduct);
-        
-        Assert.assertNotNull(rs, "Database query returned null.");
-        Assert.assertTrue(rs.next(), "Product not found in database: " + targetProduct);
-        
-        double expectedDbPrice = rs.getDouble("price");
-        System.out.println("Backend Truth: " + targetProduct + " price is " + expectedDbPrice);
+        String query = "SELECT price FROM products WHERE product_name = ?";
+        List<Map<String, Object>> rows =
+                DBUtils.executeParameterizedQuery(query, targetProduct);
+        Assert.assertFalse(rows.isEmpty(), "Product not found in test database: " + targetProduct);
 
-        
-        double actualUiPrice = page.getProductPrice(targetProduct); 
-        System.out.println("Frontend Display: " + targetProduct + " price is " + actualUiPrice);
+        double expectedDbPrice = ((Number) rows.get(0).get("price")).doubleValue();
+        double actualUiPrice = page.getProductPrice(targetProduct);
 
-        Assert.assertEquals(actualUiPrice, expectedDbPrice, "Critical defect: UI price does not match Database price!");
-        System.out.println("SUCCESS: Cross-Layer synergy achieved. Frontend accurately reflects Backend state.");
-    }
-
-    @AfterClass
-    public void teardownDatabase() {
-        System.out.println("--- Tearing Down Cross-Layer DB Environment ---");
-        DBUtils.closeConnection();
+        Assert.assertEquals(actualUiPrice, expectedDbPrice, 0.001,
+                "UI price does not match the configured test database baseline.");
     }
 }
