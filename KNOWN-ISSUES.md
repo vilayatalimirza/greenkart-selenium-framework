@@ -8,6 +8,8 @@ Each row is one execution of the default \`testng.xml\` suite.
 
 | Workflow run | Date (UTC) | Executions | Passed | Failed | Errors | Skipped | First-attempt pass rate |
 |---|---|---:|---:|---:|---:|---:|---:|
+| [#29](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43840579572) | 16 Nov 2026 | 93 | 93 | 0 | 0 | 0 | 100.0% |
+| [#28](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43839648334) | 16 Nov 2026 | 93 | 93 | 0 | 0 | 0 | 100.0% |
 | [#27](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43838482850) | 16 Nov 2026 | 93 | 92 | 1 | 0 | 0 | 98.9% |
 | [#26](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43837521394) | 16 Nov 2026 | 93 | 90 | 3 | 0 | 0 | 96.8% |
 | [#25](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43837208899) | 16 Nov 2026 | 93 | 90 | 3 | 0 | 0 | 96.8% |
@@ -19,7 +21,7 @@ Each row is one execution of the default \`testng.xml\` suite.
 | [#18](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/35330099292) | 18 Sep 2026 | 93 | 93 | 0 | 0 | 0 | 100.0% |
 | [#17](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/35285130645) | 17 Sep 2026 | 93 | 92 | 1 | 0 | 0 | 98.9% |
 
-Run #21 remains the latest clean browser/API run at 93/93. Run #27 passed 92/93 (98.9%). Its three no-results search checks passed; the single failure moved to a promo-total assertion. The latest revision makes promo result handling explicit and is awaiting CI validation.
+Run #29 is the latest clean browser/API run at 93/93 (100.0%). It validates the latest search and promo-flow changes. The valid promo test recorded a total change from 200 to 180.
 
 ## Search edge-case history
 
@@ -50,7 +52,7 @@ The latest implementation removes that incorrect DOM-presence wait. \`searchProd
 
 The test reported the original total and discounted total as 200. The page helper \`applyPromoCode()\` waited for the promo message to change for 60 seconds, swallowed the resulting \`TimeoutException\`, and then allowed the test to read the total as if the action had completed. This obscured whether the promo application itself had returned a valid response.
 
-The latest revision adds an overload that waits for an explicit expected promo message, uses a bounded 20-second response wait, and updates the total-change test to wait for the discounted total to change before asserting. It also permits repeated Apply clicks when the already displayed message is a recognized promo result. This correction is awaiting CI validation.
+The latest revision adds an overload that waits for an explicit expected promo message, uses a bounded 20-second response wait, and updates the total-change test to wait for the discounted total to change before asserting. It also permits repeated Apply clicks when the already displayed message is a recognized promo result. Run #29 passed this test and confirmed the total changed from 200 to 180.
 
 ## Historical country dropdown failure
 
@@ -112,6 +114,5 @@ They require isolated fixtures and explicit handling of public-site data changes
 
 ## Next engineering improvements
 
-1. Confirm the promo-response and discounted-total assertions with a completed browser/API CI run.
-2. Add deterministic fixtures before validating the remaining three browser/database integration examples.
-3. Correct or remove the Jenkinsfile and validate the GitLab pipeline before listing either as supported CI.
+1. Add deterministic fixtures before validating the remaining three browser/database integration examples.
+2. Correct or remove the Jenkinsfile and validate the GitLab pipeline before listing either as supported CI.

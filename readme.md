@@ -14,6 +14,8 @@ This suite runs \`testng.xml\`: 12 UI test classes and one Reqres API test class
 
 | Workflow run | Date (UTC) | Executions | Passed | Failed | Errors | Skipped | First-attempt pass rate |
 |---|---|---:|---:|---:|---:|---:|---:|
+| [#29](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43840579572) | 16 Nov 2026 | 93 | 93 | 0 | 0 | 0 | **100.0%** |
+| [#28](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43839648334) | 16 Nov 2026 | 93 | 93 | 0 | 0 | 0 | **100.0%** |
 | [#27](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43838482850) | 16 Nov 2026 | 93 | 92 | 1 | 0 | 0 | **98.9%** |
 | [#26](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43837521394) | 16 Nov 2026 | 93 | 90 | 3 | 0 | 0 | **96.8%** |
 | [#25](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43837208899) | 16 Nov 2026 | 93 | 90 | 3 | 0 | 0 | **96.8%** |
@@ -35,13 +37,15 @@ The separate \`testng-db.xml\` suite runs two database-only tests: \`DatabaseSmo
 
 | Workflow run | Date (UTC) | Executions | Passed | Failed | First-attempt pass rate |
 |---|---|---:|---:|---:|---:|
+| [#29](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43840579572) | 16 Nov 2026 | 2 | 2 | 0 | **100.0%** |
+| [#28](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43839648334) | 16 Nov 2026 | 2 | 2 | 0 | **100.0%** |
 | [#27](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43838482850) | 16 Nov 2026 | 2 | 2 | 0 | **100.0%** |
 | [#26](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43837521394) | 16 Nov 2026 | 2 | 2 | 0 | **100.0%** |
 | [#25](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43837208899) | 16 Nov 2026 | 2 | 1 | 1 | **50.0%** |
 
 Run #25 exposed a fixture mismatch: the database seed had Brocolli at 120.00 while the smoke test expected 60.00. The canonical seed in \`src/test/resources/init.sql\` was corrected, and the database job passed 2/2 in runs #26 and #27. These are small, run-specific samples, not a broad reliability claim.
 
-Run #27 is the latest completed browser/API run: 92/93 passed (98.9%). It had no search edge-case failures; the single promo-total failure is documented above. Run #27's separate database job also passed 2/2. The latest completed clean browser/API run remains #21 (93/93).
+Run #29 is the latest completed browser/API run: 93/93 passed (100.0%). The promo-total assertion passed with 200 before and 180 after. Run #29's separate database job also passed 2/2. This is one clean execution snapshot, not a long-term reliability statistic.
 
 ## What is implemented
 
