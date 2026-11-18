@@ -4,6 +4,17 @@ A Java QA automation project for the public [GreenKart demo application](https:/
 
 This is a portfolio project built around a public demo website and a separate test database. It is not a production test environment. The local MySQL database is not the database behind the GreenKart application.
 
+## Latest main-branch CI run
+
+The latest completed default-branch workflow is [run #33, 16 November 2026](https://github.com/vilayatalimirza/greenkart-selenium-framework/actions/runs/43850589978), on commit `7010621`. Both CI jobs passed:
+
+| Suite | Executions | Passed | Failed | Errors | Skipped |
+|---|---:|---:|---:|---:|---:|
+| Browser and external Reqres API | 93 | 93 | 0 | 0 | 0 |
+| Isolated MySQL/JDBC | 2 | 2 | 0 | 0 | 0 |
+
+These are separate suites and should not be represented as one combined test total. The JDBC job uses a disposable MySQL 8 service, not the database behind GreenKart. The browser/API job includes the Reqres sample API test, not a GreenKart backend API test.
+
 ## CI evidence
 
 The browser/API and database suites run in separate GitHub Actions jobs. Their counts must not be combined into one test total.
